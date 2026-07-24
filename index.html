@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>草莓拼豆图纸生成器 | pixelbeads拼豆图纸转换器</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍓</text></svg>">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <div class="logo">
+            <span class="logo-icon">🍓</span>
+            <div class="logo-text">
+                <h1>草莓</h1>
+                <p>拼豆底稿生成器</p>
+            </div>
+        </div>
+        <nav class="nav">
+            <button class="nav-btn" onclick="showLogin()">登录账户</button>
+            <button class="nav-btn">历史记录</button>
+            <button class="nav-btn">客服</button>
+            <button class="nav-btn">导入</button>
+            <button class="nav-btn">下载</button>
+        </nav>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="main">
+        <div class="container">
+            <!-- 左侧：上传区域 -->
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <p class="upload-text">上传图片开始生成</p>
+                        <p class="upload-hint">支持 JPG / PNG / CSV，点击或拖拽到画布</p>
+                        <input type="file" id="fileInput" accept="image/*,.csv" hidden>
+                    </div>
+                </div>
+                
+                <div class="manual-edit">
+                    <h3>手动空白画板编辑</h3>
+                    <p>创建 100×100 空白画布，使用画笔自由设计拼豆图</p>
+                    <button class="create-canvas-btn" onclick="showVerifyModal()">创建空白画布</button>
+                </div>
+            </div>
+
+            <!-- 右侧：快捷入口 -->
+            <div class="sidebar">
+                <h3>快捷入口</h3>
+                <div class="quick-links">
+                    <button class="quick-btn" onclick="showVideoTutorial()">
+                        <span class="btn-icon">▶️</span>
+                        <span>视频教程</span>
+                    </button>
+                    <button class="quick-btn primary" onclick="showGetKeyModal()">
+                        <span class="btn-icon">🔑</span>
+                        <span>获取卡密</span>
+                    </button>
+                    <button class="quick-btn" onclick="showDownloadModal()">
+                        <span class="btn-icon">💻</span>
+                        <span>手机/电脑客户端下载</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 效果展示 -->
+        <section class="preview-section">
+            <h3>效果展示</h3>
+            <p class="preview-desc">左侧上传任意图片，右侧即可自动生成可直接制作的拼豆图纸效果。</p>
+            <div class="preview-images">
+                <div class="preview-item">
+                    <img src="https://via.placeholder.com/300x300/FFE4E1/FF6B6B?text=示例原图" alt="示例原图效果">
+                    <p>示例原图效果</p>
+                </div>
+                <div class="preview-item">
+                    <img src="https://via.placeholder.com/300x300/F0F0F0/333333?text=拼豆图纸" alt="示例拼豆图纸效果">
+                    <p>示例拼豆图纸效果</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 卡密验证弹窗 -->
+    <div class="modal-overlay" id="verifyModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>卡密验证</h3>
+                <button class="close-btn" onclick="closeVerifyModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">您需要输入卡密或手机号验证后可使用拼豆图纸生成器生成图纸。</p>
+                <div class="form-group">
+                    <label>卡密或手机号</label>
+                    <input type="text" id="keyInput" placeholder="请输入10位卡密或11位手机号" maxlength="11">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="showGetKeyModal()">获取卡密</button>
+                    <button class="btn-primary" onclick="verifyKey()">验证卡密上传</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 获取卡密弹窗 -->
+    <div class="modal-overlay" id="getKeyModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>获取卡密</h3>
+                <button class="close-btn" onclick="closeGetKeyModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">请通过以下方式购买卡密：</p>
+                <div class="contact-methods">
+                    <div class="contact-item">
+                        <span class="contact-icon">🛒</span>
+                        <div class="contact-info">
+                            <h4>闲鱼购买</h4>
+                            <p>搜索"草莓拼豆卡密"或联系客服</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <span class="contact-icon">💬</span>
+                        <div class="contact-info">
+                            <h4>微信客服</h4>
+                            <p>添加微信：your_wechat_id</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <span class="contact-icon">📧</span>
+                        <div class="contact-info">
+                            <h4>邮箱联系</h4>
+                            <p>发送邮件至：your_email@example.com</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-primary" onclick="closeGetKeyModal()">我知道了</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示弹窗 -->
+    <div class="modal-overlay" id="toastModal">
+        <div class="toast">
+            <p id="toastMessage"></p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

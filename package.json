@@ -1,0 +1,9 @@
+{
+  "name": "pixelbeads-key-system",
+  "version": "1.0.0",
+  "description": "草莓拼豆图纸生成器 - 卡密验证系统",
+  "type": "module",
+  "dependencies": {
+    "@upstash/redis": "^1.28.0"
+  }
+}
