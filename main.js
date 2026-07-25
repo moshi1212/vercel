@@ -1,20 +1,19 @@
 // 全局状态
 let canvas, ctx;
-let previewCanvas, previewCtx;
 let currentImage = null;
 let isDrawing = false;
 let currentTool = 'brush';
 let currentColor = '#2d3436';
 let brushSize = 20;
 let zoom = 1;
-let offsetX = 0, offsetY = 0;
 let history = [];
 let historyIndex = -1;
 let isVerified = true;
-let gridSize = 40; // 默认网格尺寸
+let gridWidth = 60; // 默认宽度
 let threshold = 30;
 let excludedColors = new Set();
 let processMode = 'cartoon';
+const BEAD_SIZE = 12; // 每个拼豆的像素大小
 
 // 拼豆颜色库（常见拼豆颜色）
 const PERLER_COLORS = [
@@ -35,6 +34,17 @@ document.addEventListener('DOMContentLoaded', () => {
 function initCanvas() {
     canvas = document.getElementById('mainCanvas');
     ctx = canvas.getContext('2d');
+    resetCanvas();
+}
+
+// 重置画布
+function resetCanvas() {
+    // 根据网格大小计算画布尺寸
+    const width = gridWidth * BEAD_SIZE + 40; // 边距
+    const height = Math.round(gridWidth * (currentImage ? currentImage.height / currentImage.width : 1.1)) * BEAD_SIZE + 40;
+    
+    canvas.width = width;
+    canvas.height = height;
     
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -68,19 +78,28 @@ function initEventListeners() {
     
     // 参数滑块
     document.getElementById('gridSize').addEventListener('input', (e) => {
-        gridSize = parseInt(e.target.value);
-        document.getElementById('gridSizeValue').textContent = gridSize;
+        gridWidth = parseInt(e.target.value);
+        document.getElementById('gridSizeValue').textContent = gridWidth;
         updateParamDisplay();
+        if (currentImage) {
+            generatePerlerBeads();
+        }
     });
     
     document.getElementById('threshold').addEventListener('input', (e) => {
         threshold = parseInt(e.target.value);
         document.getElementById('thresholdValue').textContent = threshold;
+        if (currentImage) {
+            generatePerlerBeads();
+        }
     });
     
     // 处理模式
     document.getElementById('processMode')?.addEventListener('change', (e) => {
         processMode = e.target.value;
+        if (currentImage) {
+            generatePerlerBeads();
+        }
     });
     
     // 画笔设置
@@ -91,10 +110,8 @@ function initEventListeners() {
     });
     
     // 工具按钮
-    const brushBtn = document.getElementById('brushTool');
-    const eraserBtn = document.getElementById('eraserTool');
-    brushBtn?.addEventListener('click', () => selectTool('brush'));
-    eraserBtn?.addEventListener('click', () => selectTool('eraser'));
+    document.getElementById('brushTool')?.addEventListener('click', () => selectTool('brush'));
+    document.getElementById('eraserTool')?.addEventListener('click', () => selectTool('eraser'));
     
     // 颜色选择
     document.querySelectorAll('.color-item').forEach(item => {
@@ -123,8 +140,7 @@ function checkVerification() {
     if (lastVerify) {
         const verifyTime = new Date(lastVerify).getTime();
         const now = Date.now();
-        const hours24 = 24 * 60 * 60 * 1000;
-        if (now - verifyTime < hours24) {
+        if (now - verifyTime < 24 * 60 * 60 * 1000) {
             isVerified = true;
             return;
         }
@@ -136,19 +152,14 @@ function checkVerification() {
 function handleDrop(e) {
     e.preventDefault();
     document.getElementById('uploadZone').classList.remove('dragover');
-    
     const file = e.dataTransfer.files[0];
-    if (file) {
-        processFile(file);
-    }
+    if (file) processFile(file);
 }
 
 // 处理文件选择
 function handleFileSelect(e) {
     const file = e.target.files[0];
-    if (file) {
-        processFile(file);
-    }
+    if (file) processFile(file);
 }
 
 // 处理文件
@@ -159,7 +170,6 @@ function processFile(file) {
             const img = new Image();
             img.onload = () => {
                 currentImage = img;
-                // 上传后自动生成拼豆图
                 generatePerlerBeads();
             };
             img.src = e.target.result;
@@ -170,10 +180,8 @@ function processFile(file) {
 
 // 显示画布编辑器
 function showCanvasEditor() {
-    const uploadZone = document.getElementById('uploadZone');
-    const canvasEditor = document.getElementById('canvasEditor');
-    uploadZone?.classList.add('hidden');
-    canvasEditor?.classList.remove('hidden');
+    document.getElementById('uploadZone')?.classList.add('hidden');
+    document.getElementById('canvasEditor')?.classList.remove('hidden');
 }
 
 // ========== 核心：生成拼豆图纸 ==========
@@ -186,44 +194,41 @@ function generatePerlerBeads() {
     
     showCanvasEditor();
     
-    // 计算画布尺寸
+    // 计算网格高度
     const aspectRatio = currentImage.height / currentImage.width;
-    const height = Math.round(gridSize * aspectRatio);
+    const gridHeight = Math.round(gridWidth * aspectRatio);
     
     // 更新分辨率显示
-    document.getElementById('paramDisplay').textContent = `${gridSize}×${height}`;
-    document.getElementById('resolutionTag').textContent = `分辨率 ${gridSize}×${height}`;
+    document.getElementById('paramDisplay').textContent = `${gridWidth}×${gridHeight}`;
+    document.getElementById('resolutionTag').textContent = `分辨率 ${gridWidth}×${gridHeight}`;
     
-    // 创建临时画布处理图片
+    // 设置画布尺寸（精确匹配拼豆网格）
+    const canvasWidth = gridWidth * BEAD_SIZE;
+    const canvasHeight = gridHeight * BEAD_SIZE;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    
+    // 白色背景
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    
+    // 创建临时画布获取像素数据
     const tempCanvas = document.createElement('canvas');
     const tempCtx = tempCanvas.getContext('2d');
-    tempCanvas.width = gridSize;
-    tempCanvas.height = height;
+    tempCanvas.width = gridWidth;
+    tempCanvas.height = gridHeight;
     
-    // 绘制缩小的图片
-    tempCtx.drawImage(currentImage, 0, 0, gridSize, height);
+    // 绘制缩小后的图片
+    tempCtx.drawImage(currentImage, 0, 0, gridWidth, gridHeight);
     
     // 获取像素数据
-    const imageData = tempCtx.getImageData(0, 0, gridSize, height);
+    const imageData = tempCtx.getImageData(0, 0, gridWidth, gridHeight);
     const pixels = imageData.data;
     
-    // 处理模式：卡通（减少颜色）
-    if (processMode === 'cartoon') {
-        reduceColors(pixels, gridSize * height);
-    }
-    
-    // 清空主画布并绘制拼豆图纸
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    const cellSize = Math.min(canvas.width / gridSize, canvas.height / height);
-    const offsetX = (canvas.width - cellSize * gridSize) / 2;
-    const offsetY = (canvas.height - cellSize * height) / 2;
-    
-    // 绘制每个像素点
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < gridSize; x++) {
-            const i = (y * gridSize + x) * 4;
+    // 绘制每个拼豆
+    for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+            const i = (y * gridWidth + x) * 4;
             const r = pixels[i];
             const g = pixels[i + 1];
             const b = pixels[i + 2];
@@ -238,61 +243,65 @@ function generatePerlerBeads() {
             // 检查是否被排除
             if (excludedColors.has(closestColor.toUpperCase())) continue;
             
-            // 绘制圆形像素点（拼豆效果）
-            const px = offsetX + x * cellSize + cellSize / 2;
-            const py = offsetY + y * cellSize + cellSize / 2;
-            const radius = cellSize * 0.45;
+            // 计算拼豆位置
+            const px = x * BEAD_SIZE;
+            const py = y * BEAD_SIZE;
             
-            // 绘制主体圆形
-            ctx.beginPath();
-            ctx.arc(px, py, radius, 0, Math.PI * 2);
-            ctx.fillStyle = closestColor;
-            ctx.fill();
-            
-            // 添加高光效果
-            ctx.beginPath();
-            ctx.arc(px - radius * 0.25, py - radius * 0.25, radius * 0.3, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-            ctx.fill();
+            // 绘制拼豆（带边框的圆形）
+            drawBead(px, py, closestColor);
         }
     }
     
     // 绘制网格线
-    ctx.strokeStyle = '#e0e0e0';
-    ctx.lineWidth = 0.5;
+    ctx.strokeStyle = '#d0d0d0';
+    ctx.lineWidth = 1;
     
-    for (let x = 0; x <= gridSize; x++) {
+    for (let x = 0; x <= gridWidth; x++) {
         ctx.beginPath();
-        ctx.moveTo(offsetX + x * cellSize, offsetY);
-        ctx.lineTo(offsetX + x * cellSize, offsetY + height * cellSize);
+        ctx.moveTo(x * BEAD_SIZE, 0);
+        ctx.lineTo(x * BEAD_SIZE, canvasHeight);
         ctx.stroke();
     }
     
-    for (let y = 0; y <= height; y++) {
+    for (let y = 0; y <= gridHeight; y++) {
         ctx.beginPath();
-        ctx.moveTo(offsetX, offsetY + y * cellSize);
-        ctx.lineTo(offsetX + gridSize * cellSize, offsetY + y * cellSize);
+        ctx.moveTo(0, y * BEAD_SIZE);
+        ctx.lineTo(canvasWidth, y * BEAD_SIZE);
         ctx.stroke();
     }
-    
-    // 绘制边框
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(offsetX, offsetY, gridSize * cellSize, height * cellSize);
     
     saveHistory();
     updateColorList();
 }
 
-// 卡通模式：减少颜色数量
-function reduceColors(pixels, total) {
-    for (let i = 0; i < total * 4; i += 4) {
-        // 根据阈值调整颜色
-        const factor = threshold / 100;
-        pixels[i] = Math.round(pixels[i] / 64 * factor * 64);     // R
-        pixels[i + 1] = Math.round(pixels[i + 1] / 64 * factor * 64); // G
-        pixels[i + 2] = Math.round(pixels[i + 2] / 64 * factor * 64); // B
-    }
+// 绘制单个拼豆
+function drawBead(x, y, color) {
+    const size = BEAD_SIZE;
+    const padding = 1;
+    const radius = (size - padding * 2) / 2;
+    const centerX = x + size / 2;
+    const centerY = y + size / 2;
+    
+    // 绘制主体圆形
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    
+    // 绘制边框
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    
+    // 添加高光
+    const highlightX = centerX - radius * 0.3;
+    const highlightY = centerY - radius * 0.3;
+    const highlightRadius = radius * 0.35;
+    
+    ctx.beginPath();
+    ctx.arc(highlightX, highlightY, highlightRadius, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fill();
 }
 
 // 找到最接近的拼豆颜色
@@ -323,9 +332,8 @@ function hexToRgb(hex) {
     } : { r: 0, g: 0, b: 0 };
 }
 
-// 计算颜色距离
+// 计算颜色距离（加权欧几里得）
 function colorDistance(r1, g1, b1, r2, g2, b2) {
-    // 使用加权欧几里得距离，更符合人眼感知
     return Math.sqrt(
         2 * Math.pow(r1 - r2, 2) +
         4 * Math.pow(g1 - g2, 2) +
@@ -340,17 +348,16 @@ function updateColorList() {
     const tempCanvas = document.createElement('canvas');
     const tempCtx = tempCanvas.getContext('2d');
     const aspectRatio = currentImage.height / currentImage.width;
-    const height = Math.round(gridSize * aspectRatio);
+    const gridHeight = Math.round(gridWidth * aspectRatio);
     
-    tempCanvas.width = gridSize;
-    tempCanvas.height = height;
-    tempCtx.drawImage(currentImage, 0, 0, gridSize, height);
+    tempCanvas.width = gridWidth;
+    tempCanvas.height = gridHeight;
+    tempCtx.drawImage(currentImage, 0, 0, gridWidth, gridHeight);
     
-    const imageData = tempCtx.getImageData(0, 0, gridSize, height);
+    const imageData = tempCtx.getImageData(0, 0, gridWidth, gridHeight);
     const pixels = imageData.data;
     const colorMap = {};
     
-    // 统计颜色
     for (let i = 0; i < pixels.length; i += 4) {
         if (pixels[i + 3] < 128) continue;
         
@@ -361,10 +368,7 @@ function updateColorList() {
         }
     }
     
-    // 排序并显示
-    const sortedColors = Object.entries(colorMap)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 15);
+    const sortedColors = Object.entries(colorMap).sort((a, b) => b[1] - a[1]).slice(0, 15);
     
     const colorList = document.getElementById('colorList');
     if (colorList) {
@@ -378,10 +382,8 @@ function updateColorList() {
         `).join('');
     }
     
-    // 更新总数
     const total = sortedColors.reduce((sum, [_, count]) => sum + count, 0);
-    const totalEl = document.getElementById('totalBeads');
-    if (totalEl) totalEl.textContent = total;
+    document.getElementById('totalBeads').textContent = total;
 }
 
 // 切换排除颜色
@@ -392,11 +394,7 @@ function toggleExcludeColor(color) {
     } else {
         excludedColors.add(upperColor);
     }
-    
-    // 重新生成
-    if (currentImage) {
-        generatePerlerBeads();
-    }
+    if (currentImage) generatePerlerBeads();
 }
 
 // 去背景
@@ -409,31 +407,34 @@ function removeBackground() {
     const tempCanvas = document.createElement('canvas');
     const tempCtx = tempCanvas.getContext('2d');
     const aspectRatio = currentImage.height / currentImage.width;
-    const height = Math.round(gridSize * aspectRatio);
+    const gridHeight = Math.round(gridWidth * aspectRatio);
     
-    tempCanvas.width = gridSize;
-    tempCanvas.height = height;
-    tempCtx.drawImage(currentImage, 0, 0, gridSize, height);
+    tempCanvas.width = gridWidth;
+    tempCanvas.height = gridHeight;
+    tempCtx.drawImage(currentImage, 0, 0, gridWidth, gridHeight);
     
-    const imageData = tempCtx.getImageData(0, 0, gridSize, height);
+    const imageData = tempCtx.getImageData(0, 0, gridWidth, gridHeight);
     const pixels = imageData.data;
     
-    // 简单的背景移除：检测接近白色的区域
     for (let i = 0; i < pixels.length; i += 4) {
         const r = pixels[i];
         const g = pixels[i + 1];
         const b = pixels[i + 2];
         
-        // 如果接近白色或高亮度，设为透明
         if ((r > 240 && g > 240 && b > 240) || (r + g + b > 720)) {
             pixels[i + 3] = 0;
         }
     }
     
     tempCtx.putImageData(imageData, 0, 0);
-    currentImage = tempCanvas;
     
-    generatePerlerBeads();
+    // 创建新图片
+    const img = new Image();
+    img.onload = () => {
+        currentImage = img;
+        generatePerlerBeads();
+    };
+    img.src = tempCanvas.toDataURL();
 }
 
 // ========== 绘图工具 ==========
@@ -442,7 +443,6 @@ function selectTool(tool) {
     currentTool = tool;
     document.getElementById('brushTool')?.classList.toggle('active', tool === 'brush');
     document.getElementById('eraserTool')?.classList.toggle('active', tool === 'eraser');
-    canvas.style.cursor = tool === 'eraser' ? 'cell' : 'crosshair';
 }
 
 function startDrawing(e) {
@@ -452,20 +452,17 @@ function startDrawing(e) {
     const scaleY = canvas.height / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
-    
     ctx.beginPath();
     ctx.moveTo(x, y);
 }
 
 function draw(e) {
     if (!isDrawing) return;
-    
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
-    
     ctx.lineTo(x, y);
     ctx.strokeStyle = currentTool === 'eraser' ? '#ffffff' : currentColor;
     ctx.lineWidth = brushSize;
@@ -484,21 +481,13 @@ function stopDrawing() {
 function handleTouchStart(e) {
     e.preventDefault();
     const touch = e.touches[0];
-    const mouseEvent = new MouseEvent('mousedown', {
-        clientX: touch.clientX,
-        clientY: touch.clientY
-    });
-    startDrawing(mouseEvent);
+    startDrawing({ clientX: touch.clientX, clientY: touch.clientY });
 }
 
 function handleTouchMove(e) {
     e.preventDefault();
     const touch = e.touches[0];
-    const mouseEvent = new MouseEvent('mousemove', {
-        clientX: touch.clientX,
-        clientY: touch.clientY
-    });
-    draw(mouseEvent);
+    draw({ clientX: touch.clientX, clientY: touch.clientY });
 }
 
 // ========== 历史记录 ==========
@@ -507,7 +496,6 @@ function saveHistory() {
     historyIndex++;
     history = history.slice(0, historyIndex);
     history.push(canvas.toDataURL());
-    
     if (history.length > 50) {
         history.shift();
         historyIndex--;
@@ -531,7 +519,8 @@ function redo() {
 function loadHistory() {
     const img = new Image();
     img.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.width = img.width;
+        canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
     };
     img.src = history[historyIndex];
@@ -543,15 +532,10 @@ function clearCanvas() {
     saveHistory();
 }
 
+function zoomIn() { zoom = Math.min(zoom * 1.2, 3); }
+function zoomOut() { zoom = Math.max(zoom / 1.2, 0.5); }
+
 // ========== 其他功能 ==========
-
-function zoomIn() {
-    zoom = Math.min(zoom * 1.2, 3);
-}
-
-function zoomOut() {
-    zoom = Math.max(zoom / 1.2, 0.5);
-}
 
 function downloadImage() {
     const link = document.createElement('a');
@@ -562,31 +546,36 @@ function downloadImage() {
 
 function updateParamDisplay() {
     const aspectRatio = currentImage ? currentImage.height / currentImage.width : 1.1;
-    const height = Math.round(gridSize * aspectRatio);
-    document.getElementById('paramDisplay').textContent = `${gridSize}×${height}`;
-    document.getElementById('resolutionTag').textContent = `分辨率 ${gridSize}×${height}`;
+    const height = Math.round(gridWidth * aspectRatio);
+    const display = document.getElementById('paramDisplay');
+    const tag = document.getElementById('resolutionTag');
+    if (display) display.textContent = `${gridWidth}×${height}`;
+    if (tag) tag.textContent = `分辨率 ${gridWidth}×${height}`;
 }
 
 function createBlankCanvas() {
+    const gridHeight = 40;
+    canvas.width = gridWidth * BEAD_SIZE;
+    canvas.height = gridHeight * BEAD_SIZE;
+    
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // 绘制空白网格
-    const size = 40;
-    const cellSize = canvas.width / size;
-    
+    // 绘制网格
     ctx.strokeStyle = '#f0f0f0';
     ctx.lineWidth = 1;
     
-    for (let i = 0; i <= size; i++) {
+    for (let x = 0; x <= gridWidth; x++) {
         ctx.beginPath();
-        ctx.moveTo(i * cellSize, 0);
-        ctx.lineTo(i * cellSize, canvas.height);
+        ctx.moveTo(x * BEAD_SIZE, 0);
+        ctx.lineTo(x * BEAD_SIZE, canvas.height);
         ctx.stroke();
-        
+    }
+    
+    for (let y = 0; y <= gridHeight; y++) {
         ctx.beginPath();
-        ctx.moveTo(0, i * cellSize);
-        ctx.lineTo(canvas.width, i * cellSize);
+        ctx.moveTo(0, y * BEAD_SIZE);
+        ctx.lineTo(canvas.width, y * BEAD_SIZE);
         ctx.stroke();
     }
     
@@ -597,25 +586,21 @@ function createBlankCanvas() {
 // ========== 卡密验证 ==========
 
 async function verifyLicense() {
-    const phone = document.getElementById('phone').value.trim();
-    const license = document.getElementById('license').value.trim();
+    const phone = document.getElementById('phone')?.value.trim();
+    const license = document.getElementById('license')?.value.trim();
     const messageDiv = document.getElementById('message');
     const verifyBtn = document.getElementById('verifyBtn');
     
     if (!/^1\d{10}$/.test(phone)) {
-        messageDiv.className = 'message error';
-        messageDiv.textContent = '请输入正确的11位手机号';
+        if (messageDiv) { messageDiv.className = 'message error'; messageDiv.textContent = '请输入正确的11位手机号'; }
         return;
     }
-    
     if (license.length !== 10) {
-        messageDiv.className = 'message error';
-        messageDiv.textContent = '卡密必须为10位';
+        if (messageDiv) { messageDiv.className = 'message error'; messageDiv.textContent = '卡密必须为10位'; }
         return;
     }
     
-    verifyBtn.disabled = true;
-    verifyBtn.textContent = '验证中...';
+    if (verifyBtn) { verifyBtn.disabled = true; verifyBtn.textContent = '验证中...'; }
     
     try {
         const response = await fetch('/api/verify', {
@@ -623,24 +608,19 @@ async function verifyLicense() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ phone, license })
         });
-        
         const data = await response.json();
         
         if (data.success) {
-            messageDiv.className = 'message success';
-            messageDiv.textContent = '验证成功！';
+            if (messageDiv) { messageDiv.className = 'message success'; messageDiv.textContent = '验证成功！'; }
             localStorage.setItem('lastVerify', new Date().toISOString());
             setTimeout(closeLicenseModal, 1000);
         } else {
-            messageDiv.className = 'message error';
-            messageDiv.textContent = data.message || '验证失败，请检查卡密';
+            if (messageDiv) { messageDiv.className = 'message error'; messageDiv.textContent = data.message || '验证失败'; }
         }
     } catch (error) {
-        messageDiv.className = 'message error';
-        messageDiv.textContent = '网络错误，请稍后重试';
+        if (messageDiv) { messageDiv.className = 'message error'; messageDiv.textContent = '网络错误'; }
     } finally {
-        verifyBtn.disabled = false;
-        verifyBtn.textContent = '验证卡密';
+        if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.textContent = '验证卡密'; }
     }
 }
 
@@ -660,6 +640,4 @@ function closeLoginModal() {
 
 // 绑定验证按钮
 document.getElementById('verifyBtn')?.addEventListener('click', verifyLicense);
-
-// 将 toggleExcludeColor 暴露到全局
 window.toggleExcludeColor = toggleExcludeColor;
