@@ -27,7 +27,8 @@ const toolBtns = document.querySelectorAll('.tool-btn');
 
 // 打开卡密弹窗
 getLicenseBtn.addEventListener('click', () => {
-    licenseModal.classList.add('active');
+    // ⚠️ 验证已关闭，直接提示
+    alert('🐱 验证功能已关闭，可直接使用所有功能！');
 });
 
 function closeLicenseModal() {
@@ -117,6 +118,11 @@ function enableFeatures() {
 }
 
 function checkVerification() {
+    // ⚠️ 验证功能已临时关闭（调试模式）
+    isVerified = true;
+    return true;
+    
+    /* 原验证逻辑（已注释）
     const verified = localStorage.getItem('licenseVerified');
     const verifiedAt = localStorage.getItem('verifiedAt');
     
@@ -132,6 +138,7 @@ function checkVerification() {
         }
     }
     return false;
+    */
 }
 
 // ==================== 文件上传系统 ====================
