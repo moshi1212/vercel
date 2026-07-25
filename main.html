@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>草莓拼豆图纸生成器 | pixelbeads拼豆图纸转换器</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-icon">🍓</span>
+                <div class="logo-text">
+                    <span class="logo-title">草莓</span>
+                    <span class="logo-subtitle">拼豆底稿生成器</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="nav-btn" onclick="showLogin()">登录账户</button>
+            <button class="nav-btn">历史记录</button>
+            <button class="nav-btn">客服</button>
+            <button class="nav-btn">导入</button>
+            <button class="nav-btn btn-primary-small">下载</button>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <div class="content-wrapper">
+            <!-- 左侧画布区 -->
+            <div class="canvas-area">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-content">
+                        <div class="upload-icon">📤</div>
+                        <h3>上传图片开始生成</h3>
+                        <p>支持 JPG / PNG / CSV，点击或拖拽到画布</p>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*,.csv" hidden>
+                </div>
+                
+                <div class="canvas-editor hidden" id="canvasEditor">
+                    <canvas id="mainCanvas" width="800" height="600"></canvas>
+                    <div class="canvas-tools">
+                        <button class="tool-btn" title="画笔">✏️</button>
+                        <button class="tool-btn" title="橡皮">🧹</button>
+                        <button class="tool-btn" title="撤销">↩️</button>
+                        <button class="tool-btn" title="重做">↪️</button>
+                        <button class="tool-btn" title="清空">🗑️</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧快捷入口 -->
+            <div class="sidebar">
+                <div class="sidebar-card">
+                    <h3>快捷入口</h3>
+                    <div class="quick-links">
+                        <button class="quick-btn">
+                            <span class="btn-icon">🎥</span>
+                            <span>视频教程</span>
+                        </button>
+                        <button class="quick-btn" id="getLicenseBtn">
+                            <span class="btn-icon">🔑</span>
+                            <span>获取卡密</span>
+                        </button>
+                        <button class="quick-btn">
+                            <span class="btn-icon">💻</span>
+                            <span>手机/电脑客户端下载</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <h3>颜色面板</h3>
+                    <div class="color-palette">
+                        <div class="color-item" style="background:#ff6b6b" title="红色"></div>
+                        <div class="color-item" style="background:#4ecdc4" title="青色"></div>
+                        <div class="color-item" style="background:#45b7d1" title="蓝色"></div>
+                        <div class="color-item" style="background:#96ceb4" title="绿色"></div>
+                        <div class="color-item" style="background:#feca57" title="黄色"></div>
+                        <div class="color-item" style="background:#ff9ff3" title="粉色"></div>
+                        <div class="color-item" style="background:#54a0ff" title="天蓝"></div>
+                        <div class="color-item" style="background:#5f27cd" title="紫色"></div>
+                        <div class="color-item" style="background:#00d2d3" title="青绿"></div>
+                        <div class="color-item" style="background:#ff9f43" title="橙色"></div>
+                        <div class="color-item" style="background:#ee5a24" title="深红"></div>
+                        <div class="color-item" style="background:#009432" title="深绿"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 手动编辑区 -->
+        <div class="manual-edit">
+            <div class="edit-card">
+                <h3>🎨 手动空白画板编辑</h3>
+                <p>创建 100×100 空白画布，使用画笔自由设计拼豆图</p>
+                <button class="btn-create" onclick="createBlankCanvas()">创建空白画布</button>
+            </div>
+        </div>
+
+        <!-- 效果展示 -->
+        <div class="showcase">
+            <h3>效果展示</h3>
+            <p class="showcase-desc">左侧上传任意图片，右侧即可自动生成可直接制作的拼豆图纸效果。</p>
+            <div class="showcase-grid">
+                <div class="showcase-item">
+                    <div class="showcase-label">示例原图</div>
+                    <div class="showcase-img placeholder">
+                        <span>🐱</span>
+                    </div>
+                </div>
+                <div class="showcase-item">
+                    <div class="showcase-label">拼豆图纸效果</div>
+                    <div class="showcase-img placeholder pixel">
+                        <span>🟥⬜🟥</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 卡密验证弹窗 -->
+    <div class="modal-overlay" id="licenseModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>🔐 卡密验证</h2>
+                <button class="modal-close" onclick="closeLicenseModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="phone">手机号</label>
+                    <input type="tel" id="phone" placeholder="请输入11位手机号" maxlength="11">
+                </div>
+                <div class="form-group">
+                    <label for="license">卡密</label>
+                    <input type="text" id="license" placeholder="请输入10位卡密" maxlength="10">
+                </div>
+                <button id="verifyBtn" class="btn-verify">验证卡密</button>
+                <div id="message" class="message"></div>
+                
+                <div class="contact-section">
+                    <p>没有卡密？联系客服购买：</p>
+                    <div class="contact-info">
+                        <p>📱 微信：<strong>kaxill</strong></p>
+                        <p>📧 邮箱：<strong>617171856@qq.com</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 登录弹窗 -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>👤 登录账户</h2>
+                <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="text-align:center; color:#666; padding:40px 0;">登录功能开发中...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
