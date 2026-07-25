@@ -1,4 +1,4 @@
-// 卡密验证 API
+// 验证卡密 API
 import { Redis } from '@upstash/redis';
 
 const redis = new Redis({
@@ -11,63 +11,66 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
+
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
-  
+
   if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, message: 'Method not allowed' });
+    return res.status(405).json({ success: false, message: '方法不允许' });
   }
-  
+
   try {
-    const { key, type } = req.body;
-    
-    if (!key) {
-      return res.status(400).json({ success: false, message: '请输入卡密或手机号' });
+    const { phone, license } = req.body;
+
+    // 验证输入
+    if (!phone || !/^1\d{10}$/.test(phone)) {
+      return res.status(400).json({ success: false, message: '手机号格式错误' });
     }
-    
-    // 手机号验证 - 直接通过（格式已在前端校验）
-    if (type === 'phone') {
-      return res.json({
-        success: true,
-        message: '验证成功',
-        duration: 24 * 60 * 60 * 1000, // 24小时
-        type: 'phone'
-      });
+
+    if (!license || !/^[A-Za-z0-9]{10}$/.test(license)) {
+      return res.status(400).json({ success: false, message: '卡密格式错误' });
     }
-    
-    // 卡密验证
+
+    const key = license.toUpperCase();
+
+    // 检查卡密是否存在
     const keyData = await redis.get(`key:${key}`);
     
     if (!keyData) {
-      return res.json({ success: false, message: '卡密不存在或已过期' });
+      return res.status(400).json({ success: false, message: '卡密不存在' });
     }
-    
+
     const keyInfo = typeof keyData === 'string' ? JSON.parse(keyData) : keyData;
-    
-    // 检查是否已使用
-    if (keyInfo.status === 'used') {
-      return res.json({ success: false, message: '该卡密已被使用' });
+
+    // 检查卡密是否已使用
+    if (keyInfo.used) {
+      return res.status(400).json({ success: false, message: '卡密已被使用' });
     }
+
+    // 标记卡密为已使用
+    keyInfo.used = true;
+    keyInfo.usedBy = phone;
+    keyInfo.usedAt = new Date().toISOString();
     
-    // 检查是否已过期
-    if (keyInfo.expiresAt && Date.now() > keyInfo.expiresAt) {
-      return res.json({ success: false, message: '卡密已过期' });
-    }
-    
-    // 验证成功 - 返回有效期
-    const duration = keyInfo.duration || 30 * 24 * 60 * 60 * 1000; // 默认30天
-    
-    return res.json({
-      success: true,
+    await redis.set(`key:${key}`, JSON.stringify(keyInfo));
+
+    // 记录验证日志
+    const logEntry = {
+      phone,
+      license: key,
+      timestamp: new Date().toISOString()
+    };
+    await redis.lpush('verification_logs', JSON.stringify(logEntry));
+
+    return res.status(200).json({ 
+      success: true, 
       message: '验证成功',
-      duration: duration,
-      type: 'key'
+      data: { phone, verifiedAt: keyInfo.usedAt }
     });
-    
+
   } catch (error) {
-    console.error('验证失败:', error);
+    console.error('验证错误:', error);
     return res.status(500).json({ success: false, message: '服务器错误' });
   }
 }

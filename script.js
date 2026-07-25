@@ -1,263 +1,120 @@
-// ==================== 配置 ====================
+// 卡密验证系统前端脚本
+
 const API_BASE = '/api';
-const VERIFIED_KEY = 'pixelbeads_verified';
-const VERIFIED_UNTIL_KEY = 'pixelbeads_verified_until';
 
-// ==================== 状态管理 ====================
-let isVerified = false;
+// DOM 元素
+const phoneInput = document.getElementById('phone');
+const licenseInput = document.getElementById('license');
+const verifyBtn = document.getElementById('verifyBtn');
+const contactBtn = document.getElementById('contactBtn');
+const messageDiv = document.getElementById('message');
 
-// ==================== 初始化 ====================
-document.addEventListener('DOMContentLoaded', () => {
-    checkVerificationStatus();
-    setupEventListeners();
-});
+// 验证手机号格式
+function isValidPhone(phone) {
+    return /^1\d{10}$/.test(phone);
+}
 
-// ==================== 验证状态检查 ====================
-function checkVerificationStatus() {
-    const verified = localStorage.getItem(VERIFIED_KEY);
-    const verifiedUntil = localStorage.getItem(VERIFIED_UNTIL_KEY);
-    
-    if (verified && verifiedUntil) {
+// 验证卡密格式（10位字母数字）
+function isValidLicense(key) {
+    return /^[A-Za-z0-9]{10}$/.test(key);
+}
+
+// 显示消息
+function showMessage(text, type) {
+    messageDiv.textContent = text;
+    messageDiv.className = `message ${type}`;
+    setTimeout(() => {
+        messageDiv.className = 'message';
+    }, 5000);
+}
+
+// 检查本地存储的验证状态
+function checkLocalAuth() {
+    const auth = localStorage.getItem('license_auth');
+    if (auth) {
+        const data = JSON.parse(auth);
         const now = Date.now();
-        const until = parseInt(verifiedUntil);
-        
-        if (now < until) {
-            isVerified = true;
-            updateUIForVerified();
-        } else {
-            // 验证已过期
-            clearVerification();
+        // 24小时内有效
+        if (now - data.timestamp < 24 * 60 * 60 * 1000) {
+            return true;
         }
+        localStorage.removeItem('license_auth');
     }
+    return false;
 }
 
-function updateUIForVerified() {
-    // 已验证用户显示状态
-    const uploadArea = document.getElementById('uploadArea');
-    if (uploadArea) {
-        uploadArea.innerHTML = `
-            <div class="upload-content">
-                <span style="font-size: 48px;">✅</span>
-                <p class="upload-text">已验证，可以开始使用</p>
-                <p class="upload-hint">点击或拖拽上传图片生成拼豆图纸</p>
-                <input type="file" id="fileInput" accept="image/*,.csv" hidden>
-            </div>
-        `;
-    }
-}
+// 验证卡密
+async function verifyLicense() {
+    const phone = phoneInput.value.trim();
+    const license = licenseInput.value.trim().toUpperCase();
 
-function clearVerification() {
-    localStorage.removeItem(VERIFIED_KEY);
-    localStorage.removeItem(VERIFIED_UNTIL_KEY);
-    isVerified = false;
-}
-
-// ==================== 事件监听 ====================
-function setupEventListeners() {
-    // 上传区域点击
-    const uploadArea = document.getElementById('uploadArea');
-    const fileInput = document.getElementById('fileInput');
-    
-    if (uploadArea) {
-        uploadArea.addEventListener('click', (e) => {
-            if (!isVerified) {
-                showVerifyModal();
-                return;
-            }
-            fileInput?.click();
-        });
-    }
-    
-    // 文件选择
-    if (fileInput) {
-        fileInput.addEventListener('change', handleFileUpload);
-    }
-    
-    // 拖拽上传
-    if (uploadArea) {
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = '#1890ff';
-            uploadArea.style.background = '#f0f7ff';
-        });
-        
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.style.borderColor = '#d9d9d9';
-            uploadArea.style.background = 'transparent';
-        });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = '#d9d9d9';
-            uploadArea.style.background = 'transparent';
-            
-            if (!isVerified) {
-                showVerifyModal();
-                return;
-            }
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
-            }
-        });
-    }
-    
-    // 输入框回车验证
-    const keyInput = document.getElementById('keyInput');
-    if (keyInput) {
-        keyInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                verifyKey();
-            }
-        });
-    }
-}
-
-// ==================== 弹窗控制 ====================
-function showVerifyModal() {
-    document.getElementById('verifyModal')?.classList.add('active');
-    document.getElementById('keyInput')?.focus();
-}
-
-function closeVerifyModal() {
-    document.getElementById('verifyModal')?.classList.remove('active');
-}
-
-function showGetKeyModal() {
-    closeVerifyModal();
-    document.getElementById('getKeyModal')?.classList.add('active');
-}
-
-function closeGetKeyModal() {
-    document.getElementById('getKeyModal')?.classList.remove('active');
-}
-
-function showLogin() {
-    showToast('登录功能开发中...');
-}
-
-function showVideoTutorial() {
-    showToast('视频教程即将上线');
-}
-
-function showDownloadModal() {
-    showToast('客户端下载即将开放');
-}
-
-// ==================== 卡密验证 ====================
-async function verifyKey() {
-    const input = document.getElementById('keyInput');
-    const value = input?.value?.trim();
-    
-    if (!value) {
-        showToast('请输入卡密或手机号');
+    // 验证输入
+    if (!isValidPhone(phone)) {
+        showMessage('请输入正确的11位手机号', 'error');
         return;
     }
-    
-    // 验证格式：10位卡密 或 11位手机号
-    const isKey = /^[A-Za-z0-9]{10}$/.test(value);
-    const isPhone = /^1[3-9]\d{9}$/.test(value);
-    
-    if (!isKey && !isPhone) {
-        showToast('格式错误：请输入10位卡密或11位手机号');
+
+    if (!isValidLicense(license)) {
+        showMessage('请输入正确的10位卡密', 'error');
         return;
     }
-    
+
+    // 检查本地是否已验证
+    if (checkLocalAuth()) {
+        showMessage('您已通过验证（24小时内有效）', 'success');
+        return;
+    }
+
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = '验证中...';
+
     try {
-        showToast('正在验证...');
-        
         const response = await fetch(`${API_BASE}/verify`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                key: value,
-                type: isKey ? 'key' : 'phone'
-            })
+            body: JSON.stringify({ phone, license })
         });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            // 验证成功
-            const duration = result.duration || 24 * 60 * 60 * 1000; // 默认24小时
-            localStorage.setItem(VERIFIED_KEY, value);
-            localStorage.setItem(VERIFIED_UNTIL_KEY, String(Date.now() + duration));
-            
-            isVerified = true;
-            closeVerifyModal();
-            updateUIForVerified();
-            showToast('验证成功！可以开始使用了');
-            
-            // 标记卡密为已使用
-            if (isKey) {
-                await markKeyAsUsed(value);
-            }
+
+        const data = await response.json();
+
+        if (data.success) {
+            // 保存验证状态到本地
+            localStorage.setItem('license_auth', JSON.stringify({
+                phone,
+                license,
+                timestamp: Date.now()
+            }));
+            showMessage('✅ 验证成功！24小时内无需重复验证', 'success');
+            phoneInput.value = '';
+            licenseInput.value = '';
         } else {
-            showToast(result.message || '验证失败，请检查卡密或联系客服');
+            showMessage(data.message || '验证失败', 'error');
         }
     } catch (error) {
-        console.error('验证失败:', error);
-        showToast('网络错误，请稍后重试');
+        showMessage('网络错误，请稍后重试', 'error');
+    } finally {
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = '验证卡密';
     }
 }
 
-async function markKeyAsUsed(key) {
-    try {
-        await fetch(`${API_BASE}/use-key`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key })
-        });
-    } catch (error) {
-        console.error('标记使用失败:', error);
-    }
+// 联系客服
+function contactSupport() {
+    alert('请添加客服微信：客服微信号\n或发送邮件至：support@example.com');
 }
 
-// ==================== 文件上传 ====================
-function handleFileUpload(e) {
-    const file = e.target.files[0];
-    if (file) {
-        handleFile(file);
-    }
-}
+// 事件监听
+verifyBtn.addEventListener('click', verifyLicense);
+contactBtn.addEventListener('click', contactSupport);
 
-function handleFile(file) {
-    if (!file.type.startsWith('image/') && !file.name.endsWith('.csv')) {
-        showToast('仅支持 JPG、PNG 图片或 CSV 文件');
-        return;
-    }
-    
-    showToast('正在处理图片...');
-    
-    // 模拟处理
-    setTimeout(() => {
-        showToast('图片处理完成！（演示模式）');
-    }, 1500);
-}
+// 回车键提交
+licenseInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') verifyLicense();
+});
 
-// ==================== 提示消息 ====================
-function showToast(message) {
-    const toast = document.getElementById('toastModal');
-    const toastMessage = document.getElementById('toastMessage');
-    
-    if (toastMessage) {
-        toastMessage.textContent = message;
+// 页面加载时检查验证状态
+document.addEventListener('DOMContentLoaded', () => {
+    if (checkLocalAuth()) {
+        showMessage('您已通过验证（24小时内有效）', 'success');
     }
-    
-    toast?.classList.add('active');
-    
-    setTimeout(() => {
-        toast?.classList.remove('active');
-    }, 2500);
-}
-
-// ==================== 导出函数供HTML调用 ====================
-window.showVerifyModal = showVerifyModal;
-window.closeVerifyModal = closeVerifyModal;
-window.showGetKeyModal = showGetKeyModal;
-window.closeGetKeyModal = closeGetKeyModal;
-window.verifyKey = verifyKey;
-window.showLogin = showLogin;
-window.showVideoTutorial = showVideoTutorial;
-window.showDownloadModal = showDownloadModal;
+});
