@@ -65,27 +65,7 @@
                     <input type="file" id="fileInput" accept="image/*" hidden>
                 </div>
 
-                <!-- 图片裁剪区 -->
-                <div class="crop-container hidden" id="cropContainer">
-                    <div class="crop-header">
-                        <h4>📐 裁剪图片</h4>
-                        <p>拖动选框调整裁剪区域</p>
-                    </div>
-                    <div class="crop-wrapper" id="cropWrapper">
-                        <img id="cropImage" src="" alt="">
-                        <div class="crop-overlay" id="cropOverlay"></div>
-                        <div class="crop-box" id="cropBox">
-                            <div class="crop-handle top-left"></div>
-                            <div class="crop-handle top-right"></div>
-                            <div class="crop-handle bottom-left"></div>
-                            <div class="crop-handle bottom-right"></div>
-                        </div>
-                    </div>
-                    <div class="crop-actions">
-                        <button class="btn-cancel" onclick="cancelCrop()">取消</button>
-                        <button class="btn-confirm" onclick="confirmCrop()">确认裁剪</button>
-                    </div>
-                </div>
+
 
                 <!-- 画布编辑器 -->
                 <div class="canvas-editor hidden" id="canvasEditor">
@@ -242,7 +222,6 @@
 
                 <!-- 操作按钮 -->
                 <div class="sidebar-card action-card">
-                    <button class="btn-remove-bg" onclick="triggerCrop()">✂️ 裁剪图片</button>
                     <button class="btn-generate" onclick="generatePerlerBeads()">🧶 生成拼豆图案</button>
                 </div>
 
@@ -290,13 +269,6 @@
                 </div>
                 <div class="tutorial-step">
                     <div class="step-num">2</div>
-                    <div class="step-content">
-                        <h3>裁剪调整（可选）</h3>
-                        <p>点击「裁剪图片」按钮，拖动选框调整裁剪区域，保留主体部分。</p>
-                    </div>
-                </div>
-                <div class="tutorial-step">
-                    <div class="step-num">3</div>
                     <div class="step-content">
                         <h3>设置参数</h3>
                         <p>选择珠子品牌（MARD/Perler/Hama），设置图案尺寸、颜色数量、网格线等参数。</p>
