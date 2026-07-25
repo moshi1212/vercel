@@ -72,86 +72,86 @@
                         <canvas id="mainCanvas"></canvas>
                     </div>
                 </div>
-            </div>
 
-            <!-- 工具栏（左侧画布下方） -->
-            <div class="toolbar-area hidden" id="toolbarArea">
-                <div class="tool-group">
-                    <button class="tool-btn active" id="toolBrush" onclick="selectTool('brush')" title="像素画笔">
-                        <span class="tool-icon">✏️</span>
-                        <span class="tool-label">画笔</span>
-                    </button>
-                    <button class="tool-btn" id="toolEraser" onclick="selectTool('eraser')" title="橡皮擦">
-                        <span class="tool-icon">🧹</span>
-                        <span class="tool-label">橡皮</span>
-                    </button>
-                    <button class="tool-btn" id="toolPicker" onclick="selectTool('picker')" title="取色器">
-                        <span class="tool-icon">💉</span>
-                        <span class="tool-label">取色</span>
-                    </button>
-                    <button class="tool-btn" id="toolFill" onclick="selectTool('fill')" title="填充">
-                        <span class="tool-icon">🪣</span>
-                        <span class="tool-label">填充</span>
-                    </button>
-                    <button class="tool-btn" id="toolWand" onclick="selectTool('wand')" title="魔棒（批量替换颜色）">
-                        <span class="tool-icon">🪄</span>
-                        <span class="tool-label">魔棒</span>
-                    </button>
-                    <button class="tool-btn" id="toolSelect" onclick="selectTool('select')" title="框选">
-                        <span class="tool-icon">⬚</span>
-                        <span class="tool-label">框选</span>
-                    </button>
+                <!-- 工具栏（画布正下方） -->
+                <div class="toolbar-area hidden" id="toolbarArea">
+                    <div class="tool-group">
+                        <button class="tool-btn active" id="toolBrush" onclick="selectTool('brush')" title="像素画笔">
+                            <span class="tool-icon">✏️</span>
+                            <span class="tool-label">画笔</span>
+                        </button>
+                        <button class="tool-btn" id="toolEraser" onclick="selectTool('eraser')" title="橡皮擦">
+                            <span class="tool-icon">🧹</span>
+                            <span class="tool-label">橡皮</span>
+                        </button>
+                        <button class="tool-btn" id="toolPicker" onclick="selectTool('picker')" title="取色器">
+                            <span class="tool-icon">💉</span>
+                            <span class="tool-label">取色</span>
+                        </button>
+                        <button class="tool-btn" id="toolFill" onclick="selectTool('fill')" title="填充">
+                            <span class="tool-icon">🪣</span>
+                            <span class="tool-label">填充</span>
+                        </button>
+                        <button class="tool-btn" id="toolWand" onclick="selectTool('wand')" title="魔棒（批量替换颜色）">
+                            <span class="tool-icon">🪄</span>
+                            <span class="tool-label">魔棒</span>
+                        </button>
+                        <button class="tool-btn" id="toolSelect" onclick="selectTool('select')" title="框选">
+                            <span class="tool-icon">⬚</span>
+                            <span class="tool-label">框选</span>
+                        </button>
+                    </div>
+                    <div class="tool-divider-v"></div>
+                    <div class="tool-group">
+                        <button class="tool-btn" onclick="undo()" title="撤销">
+                            <span class="tool-icon">↩️</span>
+                            <span class="tool-label">撤销</span>
+                        </button>
+                        <button class="tool-btn" onclick="redo()" title="重做">
+                            <span class="tool-icon">↪️</span>
+                            <span class="tool-label">重做</span>
+                        </button>
+                    </div>
+                    <div class="tool-divider-v"></div>
+                    <div class="tool-group">
+                        <button class="tool-btn" onclick="toggleGridLines()" title="显示/隐藏网格线" id="btnGrid">
+                            <span class="tool-icon">#</span>
+                            <span class="tool-label">网格</span>
+                        </button>
+                        <button class="tool-btn" onclick="toggleColorCode()" title="显示/隐藏色号" id="btnColorCode">
+                            <span class="tool-icon">A1</span>
+                            <span class="tool-label">色号</span>
+                        </button>
+                        <button class="tool-btn" onclick="toggleNumbers()" title="显示/隐藏行列号" id="btnNumbers">
+                            <span class="tool-icon">123</span>
+                            <span class="tool-label">编号</span>
+                        </button>
+                        <button class="tool-btn" onclick="toggleFullscreen()" title="全屏预览">
+                            <span class="tool-icon">⛶</span>
+                            <span class="tool-label">全屏</span>
+                        </button>
+                    </div>
+                    <div class="tool-divider-v"></div>
+                    <div class="tool-group zoom-group">
+                        <button class="tool-btn" onclick="zoomCanvasIn()" title="放大">
+                            <span class="tool-icon">🔍+</span>
+                            <span class="tool-label">放大</span>
+                        </button>
+                        <button class="tool-btn" onclick="zoomCanvasOut()" title="缩小">
+                            <span class="tool-icon">🔍-</span>
+                            <span class="tool-label">缩小</span>
+                        </button>
+                        <button class="tool-btn" onclick="zoomCanvasFit()" title="适应窗口">
+                            <span class="tool-icon">⊡</span>
+                            <span class="tool-label">适应</span>
+                        </button>
+                        <button class="tool-btn active" onclick="toggleBeadNumbers()" title="显示/隐藏豆号" id="btnBeadNums">
+                            <span class="tool-icon">#N</span>
+                            <span class="tool-label">豆号</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="tool-divider-v"></div>
-                <div class="tool-group">
-                    <button class="tool-btn" onclick="undo()" title="撤销">
-                        <span class="tool-icon">↩️</span>
-                        <span class="tool-label">撤销</span>
-                    </button>
-                    <button class="tool-btn" onclick="redo()" title="重做">
-                        <span class="tool-icon">↪️</span>
-                        <span class="tool-label">重做</span>
-                    </button>
-                </div>
-                <div class="tool-divider-v"></div>
-                <div class="tool-group">
-                    <button class="tool-btn" onclick="toggleGridLines()" title="显示/隐藏网格线" id="btnGrid">
-                        <span class="tool-icon">#</span>
-                        <span class="tool-label">网格</span>
-                    </button>
-                    <button class="tool-btn" onclick="toggleColorCode()" title="显示/隐藏色号" id="btnColorCode">
-                        <span class="tool-icon">A1</span>
-                        <span class="tool-label">色号</span>
-                    </button>
-                    <button class="tool-btn" onclick="toggleNumbers()" title="显示/隐藏行列号" id="btnNumbers">
-                        <span class="tool-icon">123</span>
-                        <span class="tool-label">编号</span>
-                    </button>
-                    <button class="tool-btn" onclick="toggleFullscreen()" title="全屏预览">
-                        <span class="tool-icon">⛶</span>
-                        <span class="tool-label">全屏</span>
-                    </button>
-                </div>
-                <div class="tool-divider-v"></div>
-                <div class="tool-group zoom-group">
-                    <button class="tool-btn" onclick="zoomCanvasIn()" title="放大">
-                        <span class="tool-icon">🔍+</span>
-                        <span class="tool-label">放大</span>
-                    </button>
-                    <button class="tool-btn" onclick="zoomCanvasOut()" title="缩小">
-                        <span class="tool-icon">🔍-</span>
-                        <span class="tool-label">缩小</span>
-                    </button>
-                    <button class="tool-btn" onclick="zoomCanvasFit()" title="适应窗口">
-                        <span class="tool-icon">⊡</span>
-                        <span class="tool-label">适应</span>
-                    </button>
-                    <button class="tool-btn active" onclick="toggleBeadNumbers()" title="显示/隐藏豆号" id="btnBeadNums">
-                        <span class="tool-icon">#N</span>
-                        <span class="tool-label">豆号</span>
-                    </button>
-                </div>
-            </div>
+            </div><!-- end left-panel -->
 
             <!-- 右侧控制面板 -->
             <div class="sidebar">
