@@ -69,7 +69,7 @@
                 <!-- 画布编辑器 -->
                 <div class="canvas-editor hidden" id="canvasEditor">
                     <div class="canvas-wrapper" id="canvasWrapper">
-                        <canvas id="mainCanvas" id="mainCanvas"></canvas>
+                        <canvas id="mainCanvas"></canvas>
                     </div>
                 </div>
             </div>
@@ -130,6 +130,25 @@
                     <button class="tool-btn" onclick="toggleFullscreen()" title="全屏预览">
                         <span class="tool-icon">⛶</span>
                         <span class="tool-label">全屏</span>
+                    </button>
+                </div>
+                <div class="tool-divider-v"></div>
+                <div class="tool-group zoom-group">
+                    <button class="tool-btn" onclick="zoomCanvasIn()" title="放大">
+                        <span class="tool-icon">🔍+</span>
+                        <span class="tool-label">放大</span>
+                    </button>
+                    <button class="tool-btn" onclick="zoomCanvasOut()" title="缩小">
+                        <span class="tool-icon">🔍-</span>
+                        <span class="tool-label">缩小</span>
+                    </button>
+                    <button class="tool-btn" onclick="zoomCanvasFit()" title="适应窗口">
+                        <span class="tool-icon">⊡</span>
+                        <span class="tool-label">适应</span>
+                    </button>
+                    <button class="tool-btn active" onclick="toggleBeadNumbers()" title="显示/隐藏豆号" id="btnBeadNums">
+                        <span class="tool-icon">#N</span>
+                        <span class="tool-label">豆号</span>
                     </button>
                 </div>
             </div>

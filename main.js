@@ -43,6 +43,8 @@ let selStartX, selStartY;
 
 // 替换颜色（魔棒用）
 let wandFromColor = null;
+let canvasScale = 1;  // 画布缩放倍数
+let showBeadNumbers = true;  // 是否显示每个豆子的序号
 
 // 珠子尺寸
 const BEAD_SIZE = 14;
@@ -398,14 +400,15 @@ function renderCanvas() {
         }
     }
 
-    // 绘制珠子
+    // 绘制珠子（带序号）
+    let beadNum = 1;
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
             const cell = beadData[y][x];
             const px = MARGIN + x * BEAD_SIZE;
             const py = MARGIN + y * BEAD_SIZE;
             if (cell.type === 'color') {
-                drawBead(px, py, cell.hex);
+                drawBead(px, py, cell.hex, showBeadNumbers ? beadNum++ : 0);
             } else if (showBlank) {
                 drawBlankBead(px, py);
             }
@@ -466,7 +469,7 @@ function renderCanvas() {
     if (selection) drawSelection();
 }
 
-function drawBead(x, y, color) {
+function drawBead(x, y, color, num) {
     const s = BEAD_SIZE - 2;
     const cx = x + BEAD_SIZE/2, cy = y + BEAD_SIZE/2;
     ctx.beginPath();
@@ -484,6 +487,14 @@ function drawBead(x, y, color) {
     ctx.strokeStyle = 'rgba(0,0,0,0.15)';
     ctx.lineWidth = 1;
     ctx.stroke();
+    // 豆子序号（显示在珠子中心下方）
+    if (num && num > 0) {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.font = `bold ${Math.max(6, BEAD_SIZE * 0.32)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(num, cx, cy + 1);
+    }
 }
 
 function drawBlankBead(x, y) {
@@ -966,6 +977,37 @@ function toggleFullscreen() {
     } else {
         el.classList.add('hidden');
     }
+}
+
+// ---------- 画布缩放 ----------
+function applyCanvasZoom() {
+    const wrapper = document.getElementById('canvasWrapper');
+    if (!wrapper) return;
+    wrapper.style.transform = `scale(${canvasScale})`;
+    wrapper.style.transformOrigin = 'top left';
+    // wrapper 宽度需要重新计算
+    const w = canvas.width * canvasScale;
+    const h = canvas.height * canvasScale;
+    wrapper.style.width = w + 'px';
+    wrapper.style.height = h + 'px';
+}
+
+function zoomCanvasIn() {
+    canvasScale = Math.min(canvasScale + 0.25, 5);
+    applyCanvasZoom();
+}
+function zoomCanvasOut() {
+    canvasScale = Math.max(canvasScale - 0.25, 0.2);
+    applyCanvasZoom();
+}
+function zoomCanvasFit() {
+    canvasScale = 1;
+    applyCanvasZoom();
+}
+function toggleBeadNumbers() {
+    showBeadNumbers = !showBeadNumbers;
+    document.getElementById('btnBeadNums').classList.toggle('active', showBeadNumbers);
+    if (beadData) renderCanvas();
 }
 
 // ---------- 保存/加载 ----------
