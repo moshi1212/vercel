@@ -49,6 +49,9 @@
                         <button class="tool-btn" title="撤销">↩️</button>
                         <button class="tool-btn" title="重做">↪️</button>
                         <button class="tool-btn" title="清空">🗑️</button>
+                        <button class="tool-btn" title="缩小">🔍-</button>
+                        <button class="tool-btn" title="放大">🔍+</button>
+                        <button class="tool-btn" title="下载" onclick="downloadImage()">💾</button>
                     </div>
                 </div>
             </div>
@@ -74,20 +77,28 @@
                 </div>
 
                 <div class="sidebar-card">
-                    <h3>颜色面板</h3>
+                    <h3>🎨 颜色面板</h3>
                     <div class="color-palette">
+                        <div class="color-item" style="background:#ffffff;border:2px solid #ddd" title="白色"></div>
                         <div class="color-item" style="background:#ff6b6b" title="红色"></div>
-                        <div class="color-item" style="background:#4ecdc4" title="青色"></div>
-                        <div class="color-item" style="background:#45b7d1" title="蓝色"></div>
-                        <div class="color-item" style="background:#96ceb4" title="绿色"></div>
+                        <div class="color-item" style="background:#ff9f43" title="橙色"></div>
                         <div class="color-item" style="background:#feca57" title="黄色"></div>
-                        <div class="color-item" style="background:#ff9ff3" title="粉色"></div>
+                        <div class="color-item" style="background:#96ceb4" title="浅绿"></div>
+                        <div class="color-item" style="background:#009432" title="深绿"></div>
+                        <div class="color-item" style="background:#00d2d3" title="青色"></div>
+                        <div class="color-item" style="background:#45b7d1" title="蓝色"></div>
                         <div class="color-item" style="background:#54a0ff" title="天蓝"></div>
                         <div class="color-item" style="background:#5f27cd" title="紫色"></div>
-                        <div class="color-item" style="background:#00d2d3" title="青绿"></div>
-                        <div class="color-item" style="background:#ff9f43" title="橙色"></div>
-                        <div class="color-item" style="background:#ee5a24" title="深红"></div>
-                        <div class="color-item" style="background:#009432" title="深绿"></div>
+                        <div class="color-item" style="background:#ff9ff3" title="粉色"></div>
+                        <div class="color-item" style="background:#2d3436" title="黑色"></div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-card">
+                    <h3>⚙️ 画笔设置</h3>
+                    <div style="padding:10px 0;">
+                        <label style="display:block;margin-bottom:8px;font-size:14px;">画笔大小：<span id="brushSizeValue">20</span>px</label>
+                        <input type="range" id="brushSize" min="5" max="50" value="20" style="width:100%;">
                     </div>
                 </div>
             </div>
