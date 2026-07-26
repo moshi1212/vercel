@@ -287,7 +287,14 @@ function generatePerlerBeads() {
 
     const cW = numW * BEAD_SIZE + MARGIN * 2;
     const cH = numH * BEAD_SIZE + MARGIN * 2;
-    canvas.width = cW;
+    // 高分辨率屏幕（Retina/手机）清晰渲染
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = cW * dpr;
+    canvas.height = cH * dpr;
+    canvas.style.width = cW + 'px';
+    canvas.style.height = cH + 'px';
+    ctx.scale(dpr, dpr);
+
     canvas.height = cH;
 
     // 预处理缩放
@@ -383,8 +390,15 @@ function renderCanvas() {
     const h = beadData.length, w = beadData[0].length;
     const cW = w * BEAD_SIZE + MARGIN * 2;
     const cH = h * BEAD_SIZE + MARGIN * 2;
-    canvas.width = cW;
-    canvas.height = cH;
+        // 高分辨率屏幕清晰渲染
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = cW * dpr;
+    canvas.height = cH * dpr;
+    canvas.style.width = cW + 'px';
+    canvas.style.height = cH + 'px';
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // 重置变换
+    ctx.scale(dpr, dpr);
+
 
     // 背景
     ctx.fillStyle = '#ffffff';
@@ -444,7 +458,8 @@ function renderCanvas() {
                 const cell = beadData[y][x];
                 if (cell.type === 'color') {
                     const code = cell.code.replace(/[A-Z]/g,'');
-                    ctx.fillText(code, MARGIN + x*BEAD_SIZE + BEAD_SIZE/2, MARGIN + y*BEAD_SIZE + BEAD_SIZE/2);
+                    ctx.fillText(code, Math.round(MARGIN + x*BEAD_SIZE + BEAD_SIZE/2), Math.round(MARGIN + y*BEAD_SIZE + BEAD_SIZE/2));
+
                 }
             }
         }
