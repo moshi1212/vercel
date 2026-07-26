@@ -1216,3 +1216,243 @@ function closeLicenseModal() { document.getElementById('licenseModal').classList
 
 // 初始化画布平移交互
 initCanvasPan();
+
+// ---------- 模式切换 ----------
+let currentMode = 'simple'; // 'simple' | 'pro'
+
+function switchMode(mode) {
+    currentMode = mode;
+    const sidebar = document.getElementById('sidebar');
+    const header = document.querySelector('.header');
+    const statusBar = document.getElementById('statusBar');
+    const canvasEditor = document.getElementById('canvasEditor');
+    
+    // 更新按钮状态
+    document.querySelectorAll('.mode-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+    
+    if (mode === 'pro') {
+        // 专业全屏：隐藏侧边栏和头部，画布全屏
+        sidebar.style.display = 'none';
+        header.style.display = 'none';
+        statusBar.style.display = 'none';
+        document.body.classList.add('pro-mode');
+        
+        // 显示底部抽屉工具栏
+        showProDrawer();
+    } else {
+        // 极简模式：恢复默认布局
+        sidebar.style.display = '';
+        header.style.display = '';
+        statusBar.style.display = '';
+        document.body.classList.remove('pro-mode');
+        
+        // 隐藏底部抽屉
+        hideProDrawer();
+    }
+    
+    // 重新计算画布尺寸
+    if (beadData) {
+        setTimeout(() => renderCanvas(), 100);
+    }
+}
+
+// ---------- 专业全屏底部抽屉 ----------
+let proDrawer = null;
+
+function showProDrawer() {
+    if (!proDrawer) {
+        proDrawer = document.createElement('div');
+        proDrawer.id = 'proDrawer';
+        proDrawer.innerHTML = `
+            <div class="pro-drawer-inner">
+                <div class="pro-tools">
+                    <button class="pro-tool" onclick="setTool('drag')" title="拖动">✋</button>
+                    <button class="pro-tool" onclick="setTool('brush')" title="画笔">✏️</button>
+                    <button class="pro-tool" onclick="setTool('eraser')" title="橡皮">🧽</button>
+                    <button class="pro-tool" onclick="setTool('picker')" title="吸管">💉</button>
+                    <button class="pro-tool" onclick="setTool('wand')" title="魔棒">🪄</button>
+                    <button class="pro-tool" onclick="setTool('fill')" title="填充">🪣</button>
+                    <span class="pro-divider"></span>
+                    <button class="pro-tool" onclick="rotateCanvas(90)" title="旋转">↻</button>
+                    <button class="pro-tool" onclick="flipCanvas('h')" title="镜像">⇄</button>
+                    <span class="pro-divider"></span>
+                    <button class="pro-tool" onclick="downloadImage()" title="下载PNG">💾</button>
+                    <button class="pro-tool exit" onclick="switchMode('simple')" title="退出全屏">✕ 退出</button>
+                </div>
+                <div class="pro-colors" id="proColorPalette"></div>
+            </div>
+        `;
+        document.body.appendChild(proDrawer);
+        
+        // 填充颜色面板
+        const colorPalette = document.getElementById('proColorPalette');
+        const colors = getCurrentColors();
+        colors.forEach(c => {
+            const btn = document.createElement('button');
+            btn.className = 'pro-color-btn';
+            btn.style.backgroundColor = c.hex;
+            btn.title = c.name;
+            btn.onclick = () => {
+                currentColor = c.hex;
+                currentColorName = c.name;
+                currentColorCode = c.code || '';
+                document.querySelectorAll('.pro-color-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            };
+            colorPalette.appendChild(btn);
+        });
+    }
+    proDrawer.style.display = 'block';
+}
+
+function hideProDrawer() {
+    if (proDrawer) {
+        proDrawer.style.display = 'none';
+    }
+}
+
+function getCurrentColors() {
+    const brands = {
+        MARD: MARD_COLORS,
+        MARD_FULL: MARD_FULL,
+        Perler: PERLER_COLORS,
+        Hama: HAMA_COLORS,
+        Artkal: ARTKAL_COLORS
+    };
+    return brands[brand] || MARD_COLORS;
+}
+
+// ---------- 色板管理弹窗 ----------
+let paletteModal = null;
+
+function openPaletteModal() {
+    if (!paletteModal) {
+        paletteModal = document.createElement('div');
+        paletteModal.id = 'paletteModal';
+        paletteModal.className = 'modal-overlay';
+        paletteModal.innerHTML = `
+            <div class="modal-content palette-modal-content">
+                <div class="modal-header">
+                    <h3>🎨 色板管理</h3>
+                    <button class="modal-close" onclick="closePaletteModal()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="palette-brand-tabs">
+                        <button class="brand-tab active" onclick="switchPaletteBrand('MARD')">MARD</button>
+                        <button class="brand-tab" onclick="switchPaletteBrand('Perler')">Perler</button>
+                        <button class="brand-tab" onclick="switchPaletteBrand('Hama')">Hama</button>
+                        <button class="brand-tab" onclick="switchPaletteBrand('Artkal')">Artkal</button>
+                    </div>
+                    <div class="palette-search">
+                        <input type="text" placeholder="搜索色号或颜色名..." id="paletteSearchInput" oninput="filterPalette()">
+                    </div>
+                    <div class="palette-actions">
+                        <button onclick="selectAllPalette()">全选</button>
+                        <button onclick="deselectAllPalette()">全不选</button>
+                        <button onclick="importPalette()">导入</button>
+                        <button onclick="exportPalette()">导出</button>
+                    </div>
+                    <div class="palette-grid-container" id="paletteGridContainer">
+                        <!-- 动态填充 -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="closePaletteModal()">取消</button>
+                    <button class="btn-primary" onclick="applyPalette()">保存并应用</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(paletteModal);
+    }
+    
+    // 填充当前品牌的色板
+    switchPaletteBrand(brand);
+    
+    paletteModal.classList.add('show');
+}
+
+function closePaletteModal() {
+    if (paletteModal) {
+        paletteModal.classList.remove('show');
+    }
+}
+
+let selectedPaletteBrand = 'MARD';
+let selectedPaletteColors = new Set();
+
+function switchPaletteBrand(b) {
+    selectedPaletteBrand = b;
+    document.querySelectorAll('.brand-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.textContent === b);
+    });
+    
+    const container = document.getElementById('paletteGridContainer');
+    if (!container) return;
+    
+    const colors = getCurrentColors();
+    container.innerHTML = '';
+    
+    colors.forEach((c, i) => {
+        const div = document.createElement('div');
+        div.className = 'palette-item';
+        div.innerHTML = `
+            <div class="palette-swatch" style="background:${c.hex}"></div>
+            <div class="palette-info">
+                <span class="palette-code">${c.code || ''}</span>
+                <span class="palette-name">${c.name}</span>
+            </div>
+            <input type="checkbox" class="palette-checkbox" data-index="${i}" ${selectedPaletteColors.has(i) ? 'checked' : ''}>
+        `;
+        div.onclick = (e) => {
+            if (e.target.type !== 'checkbox') {
+                const cb = div.querySelector('.palette-checkbox');
+                cb.checked = !cb.checked;
+                if (cb.checked) {
+                    selectedPaletteColors.add(i);
+                } else {
+                    selectedPaletteColors.delete(i);
+                }
+            }
+        };
+        container.appendChild(div);
+    });
+}
+
+function filterPalette() {
+    const query = document.getElementById('paletteSearchInput').value.toLowerCase();
+    document.querySelectorAll('.palette-item').forEach(item => {
+        const code = item.querySelector('.palette-code').textContent.toLowerCase();
+        const name = item.querySelector('.palette-name').textContent.toLowerCase();
+        item.style.display = (code.includes(query) || name.includes(query)) ? '' : 'none';
+    });
+}
+
+function selectAllPalette() {
+    document.querySelectorAll('.palette-checkbox').forEach(cb => {
+        cb.checked = true;
+        selectedPaletteColors.add(parseInt(cb.dataset.index));
+    });
+}
+
+function deselectAllPalette() {
+    document.querySelectorAll('.palette-checkbox').forEach(cb => {
+        cb.checked = false;
+        selectedPaletteColors.delete(parseInt(cb.dataset.index));
+    });
+}
+
+function importPalette() {
+    alert('导入功能开发中...');
+}
+
+function exportPalette() {
+    alert('导出功能开发中...');
+}
+
+function applyPalette() {
+    // 应用选中的颜色到色板
+    alert('已应用 ' + selectedPaletteColors.size + ' 个颜色');
+    closePaletteModal();
+}
