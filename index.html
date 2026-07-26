@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PixelBead 像素拼豆工坊 | 一键高清拼豆图纸生成器</title>
+    <title>猫球拼豆 | 一键高清拼豆图纸生成器</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,12 +17,13 @@
                     <span class="logo-subtitle">Cat Bead Studio</span>
                 </div>
             </div>
-            <nav class="home-nav">
+            <nav class="home-nav" id="homeNav">
                 <a href="#login" class="nav-btn">登录</a>
                 <a href="#features" class="nav-btn">功能</a>
                 <a href="#tutorial" class="nav-btn">教程</a>
                 <a href="#contact" class="nav-btn">联系我们</a>
             </nav>
+            <button class="nav-toggle" id="navToggle" aria-label="菜单">☰</button>
         </div>
     </header>
 
@@ -148,7 +149,7 @@
 
     <!-- 页脚 -->
     <footer class="home-footer">
-        <p>&copy; 2026 PixelBead 像素拼豆工坊 | 专业拼豆图纸生成工具</p>
+        <p>&copy; 2026 猫球拼豆 Cat Bead Studio | 专业拼豆图纸生成工具</p>
     </footer>
 
     <style>
@@ -197,6 +198,21 @@
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(43, 120, 240, 0.2);
         }
+        
+        /* 汉堡按钮：默认隐藏，移动端显示 */
+        .nav-toggle {
+            display: none;
+            background: #f5f5f5;
+            border: 1px solid #e8e8e8;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 22px;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-toggle:hover { background: #2b78f0; color: white; border-color: #2b78f0; }
         
         .home-main { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
         
@@ -323,7 +339,38 @@
             .entry-card { max-width: 100%; }
             .showcase-item { flex-direction: column; }
             .tutorial-steps { flex-direction: column; align-items: center; }
+            
+            /* 移动端导航：汉堡菜单 */
+            .home-container { position: relative; }
+            .nav-toggle { display: block; }
+            .home-nav {
+                display: none;
+                position: absolute;
+                top: calc(100% + 8px);
+                right: 24px;
+                flex-direction: column;
+                gap: 8px;
+                background: white;
+                padding: 12px;
+                border-radius: 16px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+                width: 160px;
+            }
+            .home-nav.show { display: flex; }
+            .nav-btn { width: 100%; text-align: center; }
         }
     </style>
+    <script>
+        // 移动端汉堡菜单
+        document.getElementById('navToggle').addEventListener('click', function() {
+            document.getElementById('homeNav').classList.toggle('show');
+        });
+        // 点击菜单项后自动收起
+        document.querySelectorAll('#homeNav .nav-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.getElementById('homeNav').classList.remove('show');
+            });
+        });
+    </script>
 </body>
 </html>
