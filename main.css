@@ -335,12 +335,24 @@ body {
     overflow-y: auto;
 }
 .palette-color {
-    width: 100%; aspect-ratio: 1;
+    width: 28px; height: 28px;
     border-radius: 4px;
     cursor: pointer;
     border: 2px solid transparent;
     transition: transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(0,0,0,0.7);
+    text-shadow: 0 0 2px rgba(255,255,255,0.9);
+    font-size: 8px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+    image-rendering: pixelated;
+    -webkit-text-size-adjust: 100%;
 }
+
 .palette-color:hover { transform: scale(1.15); }
 .palette-color.active { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(255,159,67,0.3); }
 .palette-color.compact { width: 24px; height: 24px; }
