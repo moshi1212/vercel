@@ -268,7 +268,7 @@ function loadImage(file) {
             document.getElementById('uploadZone').classList.add('hidden');
             document.getElementById('canvasEditor').classList.remove('hidden');
             document.getElementById('toolbarArea').classList.remove('hidden');
-            document.getElementById('statusTip').textContent = '图片已加载，点击「一键高清生成」开始转换';
+            document.getElementById('statusTip').textContent = '提示：按空格+拖动平移，Ctrl+滚轮缩放';
             // 自动生成
             setTimeout(() => generatePerlerBeads(), 100);
         };
@@ -487,13 +487,17 @@ function drawBead(x, y, color, num) {
     ctx.strokeStyle = 'rgba(0,0,0,0.15)';
     ctx.lineWidth = 1;
     ctx.stroke();
-    // 豆子序号（显示在珠子中心下方）
+    // 豆子编号（显示在格子左上角，清晰小号灰字）
     if (num && num > 0) {
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.font = `bold ${Math.max(6, BEAD_SIZE * 0.32)}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(num, cx, cy + 1);
+        // 阴影（保证白底也可读）
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.font = `${Math.max(7, Math.floor(BEAD_SIZE * 0.5))}px Arial`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(num, x + 1, y);
+        // 主字（深灰）
+        ctx.fillStyle = '#444';
+        ctx.fillText(num, x + 1, y);
     }
 }
 
@@ -992,17 +996,92 @@ function applyCanvasZoom() {
     wrapper.style.height = h + 'px';
 }
 
+// 平移偏移量（拖动画布）
+let panOffsetX = 0;
+let panOffsetY = 0;
+
+function applyCanvasTransform() {
+    const wrapper = document.getElementById('canvasWrapper');
+    if (!wrapper) return;
+    wrapper.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${canvasScale})`;
+    wrapper.style.transformOrigin = 'top left';
+}
+
+function resetPan() {
+    panOffsetX = 0;
+    panOffsetY = 0;
+    applyCanvasTransform();
+}
+
+// 拖动画布（按住空格 + 拖动，或工具栏外区域拖动）
+let isPanning = false;
+let panStart = {x:0, y:0, ox:0, oy:0};
+let spaceDown = false;
+
+function initCanvasPan() {
+    const editor = document.getElementById('canvasEditor');
+    if (!editor) return;
+    editor.style.cursor = '';
+
+    editor.addEventListener('mousedown', (e) => {
+        // 仅在中间按键、空格、或工具栏外按住时拖动
+        if (e.button === 1 || spaceDown) {
+            e.preventDefault();
+            isPanning = true;
+            panStart = {x: e.clientX, y: e.clientY, ox: panOffsetX, oy: panOffsetY};
+            editor.style.cursor = 'grabbing';
+        }
+    });
+    window.addEventListener('mousemove', (e) => {
+        if (!isPanning) return;
+        panOffsetX = panStart.ox + (e.clientX - panStart.x);
+        panOffsetY = panStart.oy + (e.clientY - panStart.y);
+        applyCanvasTransform();
+    });
+    window.addEventListener('mouseup', () => {
+        if (isPanning) {
+            isPanning = false;
+            editor.style.cursor = spaceDown ? 'grab' : '';
+        }
+    });
+
+    // Ctrl+滚轮 = 缩放；普通滚轮 = 不滚动（画布已缩放，自动溢出即可）
+    editor.addEventListener('wheel', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            if (e.deltaY < 0) zoomCanvasIn();
+            else zoomCanvasOut();
+        }
+    }, {passive:false});
+
+    // 空格按下后画布变 grab 光标
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !e.repeat && document.activeElement.tagName !== 'INPUT') {
+            spaceDown = true;
+            editor.style.cursor = 'grab';
+        }
+    });
+    window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') {
+            spaceDown = false;
+            editor.style.cursor = '';
+        }
+    });
+}
+
 function zoomCanvasIn() {
-    canvasScale = Math.min(canvasScale + 0.25, 5);
-    applyCanvasZoom();
+    canvasScale = Math.min(canvasScale + 0.25, 8);
+    applyCanvasTransform();
 }
 function zoomCanvasOut() {
     canvasScale = Math.max(canvasScale - 0.25, 0.2);
-    applyCanvasZoom();
+    applyCanvasTransform();
 }
 function zoomCanvasFit() {
     canvasScale = 1;
-    applyCanvasZoom();
+    panOffsetX = 0;
+    panOffsetY = 0;
+    applyCanvasTransform();
 }
 function toggleBeadNumbers() {
     showBeadNumbers = !showBeadNumbers;
@@ -1134,3 +1213,6 @@ function verifyLicense() {
     .catch(()=>{ msg.textContent='验证服务暂不可用'; msg.className='message error'; });
 }
 function closeLicenseModal() { document.getElementById('licenseModal').classList.add('hidden'); }
+
+// 初始化画布平移交互
+initCanvasPan();

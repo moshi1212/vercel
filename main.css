@@ -132,13 +132,29 @@ body {
 .canvas-editor {
     flex: 1;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
+    justify-content: flex-start;
     overflow: auto;
     padding: 16px;
+    position: relative;
+    background: #eceae3;
 }
-.canvas-wrapper { display: inline-block; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border-radius: 4px; }
-#mainCanvas { display: block; max-width: 100%; cursor: crosshair; }
+.canvas-wrapper {
+    display: inline-block;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border-radius: 4px;
+    background: #fff;
+    transform-origin: top left;
+    /* transform 由 JS 控制 translate + scale */
+}
+#mainCanvas {
+    display: block;
+    cursor: crosshair;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+.canvas-editor.space-down { cursor: grab; }
+.canvas-editor.panning { cursor: grabbing; }
 
 /* ===== 底部工具栏 ===== */
 .toolbar-area {
