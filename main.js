@@ -123,10 +123,8 @@ function initEventListeners() {
     const uploadZone = document.getElementById('uploadZone');
     const fileInput = document.getElementById('fileInput');
 
+    // 只保留点击上传，移除拖拽上传
     uploadZone.addEventListener('click', () => fileInput.click());
-    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
-    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-    uploadZone.addEventListener('drop', handleDrop);
     fileInput.addEventListener('change', handleFileSelect);
 
     // 画布鼠标事件
