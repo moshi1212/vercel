@@ -1,153 +1,284 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>PixelBead 像素拼豆工坊 | 一键高清拼豆图纸生成器</title>
- <link rel="stylesheet" href="main.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixelBead 像素拼豆工坊 | 一键高清拼豆图纸生成器</title>
+    <link rel="stylesheet" href="main.css">
 </head>
 <body>
- <!-- 顶部导航 -->
- <header class="header">
- <div class="header-left">
- <div class="logo">
- <span class="logo-icon">🧶</span>
- <div class="logo-text">
- <span class="logo-title">PixelBead</span>
- <span class="logo-subtitle">像素拼豆工坊</span>
- </div>
- </div>
- </div>
- <div class="header-center">
- <div class="preset-grid">
- <button class="preset-btn" onclick="setPresetGrid(16)">16×16</button>
- <button class="preset-btn" onclick="setPresetGrid(29)">29×29</button>
- <button class="preset-btn active" onclick="setPresetGrid(52)">52×52</button>
- <button class="preset-btn" onclick="setPresetGrid(104)">104×104</button>
- </div>
- <div class="transform-tools">
- <button class="nav-btn small" onclick="rotateCanvas(90)" title="顺时针旋转90°">↻90°</button>
- <button class="nav-btn small" onclick="rotateCanvas(180)" title="旋转180°">↺180°</button>
- <button class="nav-btn small" onclick="flipCanvas('h')" title="水平镜像">⇄</button>
- <button class="nav-btn small" onclick="flipCanvas('v')" title="垂直镜像">⇅</button>
- </div>
- </div>
- <div class="header-right">
- <button class="nav-btn" onclick="saveProject()">💾 保存</button>
- <button class="nav-btn" onclick="loadProject()">📂 打开</button>
- <button class="nav-btn" onclick="exportExcel()">📊 物料清单</button>
- <button class="nav-btn" onclick="showHistory()">📋 历史</button>
- <button class="nav-btn" onclick="downloadImage()">💾 PNG</button>
- <button class="nav-btn btn-primary-small" onclick="downloadPDF()">📄 PDF</button>
- </div>
- </header>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-icon">🧶</span>
+                <div class="logo-text">
+                    <span class="logo-title">PixelBead</span>
+                    <span class="logo-subtitle">像素拼豆工坊</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-center">
+            <div class="preset-grid">
+                <button class="preset-btn" onclick="setPresetGrid(16)">16×16</button>
+                <button class="preset-btn" onclick="setPresetGrid(29)">29×29</button>
+                <button class="preset-btn active" onclick="setPresetGrid(52)">52×52</button>
+                <button class="preset-btn" onclick="setPresetGrid(104)">104×104</button>
+            </div>
+            <div class="transform-tools">
+                <button class="nav-btn small" onclick="rotateCanvas(90)" title="顺时针旋转90°">↻90°</button>
+                <button class="nav-btn small" onclick="rotateCanvas(180)" title="旋转180°">↺180°</button>
+                <button class="nav-btn small" onclick="flipCanvas('h')" title="水平镜像">⇄</button>
+                <button class="nav-btn small" onclick="flipCanvas('v')" title="垂直镜像">⇅</button>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="nav-btn" onclick="saveProject()">💾 保存</button>
+            <button class="nav-btn" onclick="loadProject()">📂 打开</button>
+            <button class="nav-btn" onclick="exportExcel()">📊 物料清单</button>
+            <button class="nav-btn" onclick="showHistory()">📋 历史</button>
+            <button class="nav-btn" onclick="downloadImage()">💾 PNG</button>
+            <button class="nav-btn btn-primary-small" onclick="downloadPDF()">📄 PDF</button>
+        </div>
+    </header>
 
- <!-- 主内容区 -->
- <main class="main-content">
- <!-- 状态栏 -->
- <div class="status-bar" id="statusBar">
- <span id="cursorPos">坐标: --</span>
- <span id="hoverColor">颜色: --</span>
- <span id="statusTip">上传图片开始创作</span>
- </div>
+    <main class="main-content">
+        <div class="status-bar" id="statusBar">
+            <span id="cursorPos">坐标: --</span>
+            <span id="hoverColor">颜色: --</span>
+            <span id="statusTip">上传图片开始创作</span>
+        </div>
 
- <div class="content-wrapper">
- <!-- 左侧：画布区域 -->
- <div class="left-panel">
- <!-- 上传区 -->
- <div class="upload-zone" id="uploadZone">
- <div class="upload-content">
- <div class="upload-icon">📤</div>
- <h3>上传图片开始生成</h3>
- <p>支持 JPG / PNG / WEBP，点击或拖拽上传</p>
- </div>
- <input type="file" id="fileInput" accept="image/*" hidden>
- </div>
- <!-- 画布编辑器 -->
- <div class="canvas-editor hidden" id="canvasEditor">
- <div class="canvas-wrapper" id="canvasWrapper">
- <canvas id="mainCanvas"></canvas>
- </div>
- </div>
- </div>
+        <div class="content-wrapper">
+            <!-- 左侧：画布区域 -->
+            <div class="left-panel">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-content">
+                        <div class="upload-icon">📤</div>
+                        <h3>上传图片开始生成</h3>
+                        <p>支持 JPG / PNG / WEBP，点击或拖拽上传</p>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                </div>
+                <div class="canvas-editor hidden" id="canvasEditor">
+                    <div class="canvas-wrapper" id="canvasWrapper">
+                        <canvas id="mainCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
 
- <!-- 右侧：控制面板 -->
- <div class="sidebar">
- <div class="sidebar-card">
- <h3>🧶 珠子品牌</h3>
- <div class="brand-grid">
- <button class="brand-btn active" data-brand="MARD" onclick="setBrand('MARD')">MARD</button>
- <button class="brand-btn" data-brand="Perler" onclick="setBrand('Perler')">Perler</button>
- <button class="brand-btn" data-brand="Hama" onclick="setBrand('Hama')">Hama</button>
- <button class="brand-btn" data-brand="Artkal" onclick="setBrand('Artkal')">Artkal</button>
- </div>
- </div>
- <div class="sidebar-card">
- <h3>⚙️ 网格设置</h3>
- <div class="param-item">
- <div class="param-label"><span>宽度</span><span class="param-value" id="gridWValue">52</span></div>
- <input type="range" id="gridW" min="5" max="300" value="52" class="param-slider">
- </div>
- <div class="param-item">
- <div class="param-label"><span>高度</span><span class="param-value" id="gridHValue">52</span></div>
- <input type="range" id="gridH" min="5" max="300" value="52" class="param-slider">
- </div>
- <div class="param-item">
- <div class="param-label">
- <span>锁定宽高比</span>
- <label class="toggle-switch">
- <input type="checkbox" id="lockRatio" checked>
- <span class="toggle-slider"></span>
- </label>
- </div>
- </div>
- </div>
- <div class="sidebar-card">
- <h3>🎨 颜色控制</h3>
- <div class="param-item">
- <div class="param-label"><span>最大颜色数</span><span class="param-value" id="colorLimitValue">24</span></div>
- <input type="range" id="colorLimit" min="2" max="60" value="24" class="param-slider">
- </div>
- <div class="param-item">
- <div class="param-label">
- <span>白色区域留白</span>
- <label class="toggle-switch">
- <input type="checkbox" id="keepWhite" checked>
- <span class="toggle-slider"></span>
- </label>
- </div>
- </div>
- <div class="param-item">
- <div class="param-label">
- <span>降噪（消除单点杂色）</span>
- <label class="toggle-switch">
- <input type="checkbox" id="noiseReduction" checked>
- <span class="toggle-slider"></span>
- </label>
- </div>
- </div>
- </div>
- <div class="sidebar-card">
- <h3>🖼️ 图像预处理</h3>
- <div class="param-item">
- <div class="param-label"><span>亮度</span><span class="param-value" id="brightnessValue">100%</span></div>
- <input type="range" id="brightness" min="50" max="150" value="100" class="param-slider">
- </div>
- <div class="param-item">
- <div class="param-label"><span>对比度</span><span class="param-value" id="contrastValue">100%</span></div>
- <input type="range" id="contrast" min="50" max="150" value="100" class="param-slider">
- </div>
- <div class="param-item">
- <div class="param-label"><span>饱和度</span><span class="param-value" id="saturationValue">100%</span></div>
- <input type="range" id="saturation" min="0" max="200" value="100" class="param-slider">
- </div>
- <button class="btn-reset" onclick="resetAdjustments()">↺ 重置</button>
- </div>
- <div class="sidebar-card action-card">
- <button class="btn-generate" onclick="generatePerlerBeads()">🧶 一键高清生成</button>
- </div>
- <div class="sidebar-card">
- <h3>🎨 颜色清单 <span id="totalBeads2" style="font-size:12px;color:var(--text-light)">0颗</span></h3>
- <div class="color-list" id="colorList">
- <p 
-...(truncated)...
+            <!-- 右侧：控制面板 -->
+            <div class="sidebar">
+                <div class="sidebar-card">
+                    <h3>🧶 珠子品牌</h3>
+                    <div class="brand-grid">
+                        <button class="brand-btn active" data-brand="MARD" onclick="setBrand('MARD')">MARD</button>
+                        <button class="brand-btn" data-brand="Perler" onclick="setBrand('Perler')">Perler</button>
+                        <button class="brand-btn" data-brand="Hama" onclick="setBrand('Hama')">Hama</button>
+                        <button class="brand-btn" data-brand="Artkal" onclick="setBrand('Artkal')">Artkal</button>
+                    </div>
+                </div>
+                <div class="sidebar-card">
+                    <h3>⚙️ 网格设置</h3>
+                    <div class="param-item">
+                        <div class="param-label"><span>宽度</span><span class="param-value" id="gridWValue">52</span></div>
+                        <input type="range" id="gridW" min="5" max="300" value="52" class="param-slider">
+                    </div>
+                    <div class="param-item">
+                        <div class="param-label"><span>高度</span><span class="param-value" id="gridHValue">52</span></div>
+                        <input type="range" id="gridH" min="5" max="300" value="52" class="param-slider">
+                    </div>
+                    <div class="param-item">
+                        <div class="param-label">
+                            <span>锁定宽高比</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="lockRatio" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar-card">
+                    <h3>🎨 颜色控制</h3>
+                    <div class="param-item">
+                        <div class="param-label"><span>最大颜色数</span><span class="param-value" id="colorLimitValue">24</span></div>
+                        <input type="range" id="colorLimit" min="2" max="60" value="24" class="param-slider">
+                    </div>
+                    <div class="param-item">
+                        <div class="param-label">
+                            <span>白色区域留白</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="keepWhite" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="param-item">
+                        <div class="param-label">
+                            <span>降噪（消除单点杂色）</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="noiseReduction" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar-card">
+                    <h3>🖼️ 图像预处理</h3>
+                    <div class="param-item">
+                        <div class="param-label"><span>亮度</span><span class="param-value" id="brightnessValue">100%</span></div>
+                        <input type="range" id="brightness" min="50" max="150" value="100" class="param-slider">
+                    </div>
+                    <div class="param-item">
+                        <div class="param-label"><span>对比度</span><span class="param-value" id="contrastValue">100%</span></div>
+                        <input type="range" id="contrast" min="50" max="150" value="100" class="param-slider">
+                    </div>
+                    <div class="param-item">
+                        <div class="param-label"><span>饱和度</span><span class="param-value" id="saturationValue">100%</span></div>
+                        <input type="range" id="saturation" min="0" max="200" value="100" class="param-slider">
+                    </div>
+                    <button class="btn-reset" onclick="resetAdjustments()">↺ 重置</button>
+                </div>
+                <div class="sidebar-card action-card">
+                    <button class="btn-generate" onclick="generatePerlerBeads()">🧶 一键高清生成</button>
+                </div>
+                <div class="sidebar-card">
+                    <h3>🎨 颜色清单 <span id="totalBeads2" style="font-size:12px;color:var(--text-light)">0颗</span></h3>
+                    <div class="color-list" id="colorList">
+                        <p class="color-empty">生成图案后显示颜色清单</p>
+                    </div>
+                </div>
+                <div class="sidebar-card color-picker-card">
+                    <h3>🖌️ 当前颜色</h3>
+                    <div class="current-color">
+                        <div class="color-preview" id="currentColorPreview" style="background:#2d3436"></div>
+                        <div class="color-info">
+                            <span class="color-code" id="currentColorCode">#2D3436</span>
+                            <span class="color-name" id="currentColorName">黑色</span>
+                        </div>
+                    </div>
+                    <div class="color-palette" id="colorPalette"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部工具栏（画布正下方） -->
+        <div class="toolbar-area hidden" id="toolbarArea">
+            <div class="tool-group">
+                <button class="tool-btn active" id="toolBrush" onclick="selectTool('brush')" title="像素画笔"><span class="tool-icon">✏️</span><span class="tool-label">画笔</span></button>
+                <button class="tool-btn" id="toolEraser" onclick="selectTool('eraser')" title="橡皮擦"><span class="tool-icon">🧹</span><span class="tool-label">橡皮</span></button>
+                <button class="tool-btn" id="toolPicker" onclick="selectTool('picker')" title="取色器"><span class="tool-icon">💉</span><span class="tool-label">取色</span></button>
+                <button class="tool-btn" id="toolFill" onclick="selectTool('fill')" title="填充"><span class="tool-icon">🪣</span><span class="tool-label">填充</span></button>
+                <button class="tool-btn" id="toolWand" onclick="selectTool('wand')" title="魔棒"><span class="tool-icon">🪄</span><span class="tool-label">魔棒</span></button>
+                <button class="tool-btn" id="toolSelect" onclick="selectTool('select')" title="框选"><span class="tool-icon">⬚</span><span class="tool-label">框选</span></button>
+            </div>
+            <div class="tool-divider-v"></div>
+            <div class="tool-group">
+                <button class="tool-btn" onclick="undo()" title="撤销"><span class="tool-icon">↩️</span><span class="tool-label">撤销</span></button>
+                <button class="tool-btn" onclick="redo()" title="重做"><span class="tool-icon">↪️</span><span class="tool-label">重做</span></button>
+            </div>
+            <div class="tool-divider-v"></div>
+            <div class="tool-group">
+                <button class="tool-btn" onclick="toggleGridLines()" id="btnGrid"><span class="tool-icon">#</span><span class="tool-label">网格</span></button>
+                <button class="tool-btn" onclick="toggleColorCode()" id="btnColorCode"><span class="tool-icon">A1</span><span class="tool-label">色号</span></button>
+                <button class="tool-btn" onclick="toggleNumbers()" id="btnNumbers"><span class="tool-icon">123</span><span class="tool-label">编号</span></button>
+                <button class="tool-btn" onclick="toggleFullscreen()" title="全屏"><span class="tool-icon">⛶</span><span class="tool-label">全屏</span></button>
+            </div>
+            <div class="tool-divider-v"></div>
+            <div class="tool-group zoom-group">
+                <button class="tool-btn" onclick="zoomCanvasIn()"><span class="tool-icon">🔍+</span><span class="tool-label">放大</span></button>
+                <button class="tool-btn" onclick="zoomCanvasOut()"><span class="tool-icon">🔍-</span><span class="tool-label">缩小</span></button>
+                <button class="tool-btn" onclick="zoomCanvasFit()"><span class="tool-icon">⊡</span><span class="tool-label">适应</span></button>
+                <button class="tool-btn active" onclick="toggleBeadNumbers()" id="btnBeadNums"><span class="tool-icon">#N</span><span class="tool-label">豆号</span></button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 局部放大镜窗口 -->
+    <div class="magnifier-window hidden" id="magnifierWindow">
+        <div class="magnifier-header">
+            <span class="magnifier-title">🔍 局部放大镜</span>
+            <div class="magnifier-zoom-btns">
+                <button class="mag-zoom-btn" onclick="setMagZoom(2)">2x</button>
+                <button class="mag-zoom-btn active" onclick="setMagZoom(4)">4x</button>
+                <button class="mag-zoom-btn" onclick="setMagZoom(8)">8x</button>
+                <button class="mag-zoom-btn" onclick="setMagZoom(16)">16x</button>
+            </div>
+            <button class="mag-close" onclick="toggleMagnifier()">✕</button>
+        </div>
+        <div class="magnifier-body" id="magBody"><canvas id="magCanvas" width="256" height="256"></canvas></div>
+        <div class="magnifier-coord" id="magCoord">网格坐标: --</div>
+        <div class="magnifier-hint">移动鼠标查看细节</div>
+    </div>
+
+    <!-- 教程弹窗 -->
+    <div class="modal-overlay hidden" id="tutorialModal">
+        <div class="modal modal-large">
+            <div class="modal-header"><h2>📖 使用教程</h2><button class="modal-close" onclick="closeTutorial()">✕</button></div>
+            <div class="modal-body tutorial-body">
+                <div class="tutorial-step"><div class="step-num">1</div><div class="step-content"><h3>上传图片</h3><p>点击上传区域选择 JPG/PNG/WEBP 图片。</p></div></div>
+                <div class="tutorial-step"><div class="step-num">2</div><div class="step-content"><h3>设置参数</h3><p>选择品牌和颜色数量。</p></div></div>
+                <div class="tutorial-step"><div class="step-num">3</div><div class="step-content"><h3>一键生成</h3><p>点击「一键高清生成」。</p></div></div>
+                <div class="tutorial-step"><div class="step-num">4</div><div class="step-content"><h3>导出</h3><p>点击 PNG 或 PDF 下载。</p></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史记录 -->
+    <div class="modal-overlay hidden" id="historyModal">
+        <div class="modal">
+            <div class="modal-header"><h2>📋 历史记录</h2><button class="modal-close" onclick="closeHistory()">✕</button></div>
+            <div class="modal-body"><div class="history-list" id="historyList"><p class="history-empty">暂无历史记录</p></div></div>
+        </div>
+    </div>
+
+    <!-- 全屏预览 -->
+    <div class="fullscreen-overlay hidden" id="fullscreenOverlay">
+        <button class="fullscreen-close" onclick="toggleFullscreen()">✕</button>
+        <canvas id="fullscreenCanvas"></canvas>
+    </div>
+
+    <!-- 替换颜色弹窗 -->
+    <div class="modal-overlay hidden" id="replaceColorModal">
+        <div class="modal modal-small">
+            <div class="modal-header"><h2>🪄 批量替换颜色</h2><button class="modal-close" onclick="closeReplaceModal()">✕</button></div>
+            <div class="modal-body">
+                <p style="margin-bottom:12px">将 <strong id="fromColorPreview" style="display:inline-block;width:20px;height:20px;vertical-align:middle;border-radius:4px"></strong> <span id="fromColorInfo">颜色A</span> 替换为：</p>
+                <div class="current-color" style="margin-bottom:12px">
+                    <div class="color-preview" id="replaceToPreview" style="background:#2d3436"></div>
+                    <div class="color-info"><span class="color-code" id="replaceToCode">#2D3436</span><span class="color-name" id="replaceToName">黑色</span></div>
+                </div>
+                <div class="color-palette compact" id="replacePalette" style="max-height:200px;overflow-y:auto"></div>
+                <button class="btn-generate" style="margin-top:12px;width:100%" onclick="confirmReplaceColor()">✅ 确认替换</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 物料清单弹窗 -->
+    <div class="modal-overlay hidden" id="excelModal">
+        <div class="modal"><div class="modal-header"><h2>📊 物料清单</h2><button class="modal-close" onclick="closeExcelModal()">✕</button></div>
+            <div class="modal-body" id="excelContent"></div>
+        </div>
+    </div>
+
+    <!-- 卡密验证弹窗 -->
+    <div class="modal-overlay hidden" id="licenseModal">
+        <div class="modal">
+            <div class="modal-header"><h2>🧶 卡密验证</h2><button class="modal-close" onclick="closeLicenseModal()">✕</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label for="phone">手机号</label><input type="tel" id="phone" placeholder="请输入11位手机号" maxlength="11"></div>
+                <div class="form-group"><label for="license">卡密</label><input type="text" id="license" placeholder="请输入10位卡密" maxlength="10"></div>
+                <button id="verifyBtn" class="btn-verify" onclick="verifyLicense()">验证卡密</button>
+                <div id="message" class="message"></div>
+                <div class="contact-section">
+                    <p>没有卡密？联系客服：</p>
+                    <p>📱 微信：<strong>kaxill</strong></p>
+                    <p>📧 邮箱：<strong>617171856@qq.com</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
