@@ -47,10 +47,10 @@ let canvasScale = 1;  // 画布缩放倍数
 let showBeadNumbers = true;  // 是否显示每个豆子的序号
 
 // 珠子尺寸
-const BEAD_SIZE = 14;
-const GRID_LINE = 0.5;
-const MARGIN = 30;
-const NUMBER_FONT = 7;
+const BEAD_SIZE = 22;
+const GRID_LINE = 1;
+const MARGIN = 38;
+const NUMBER_FONT = 11;
 
 // ---------- 颜色库 ----------
 const PERLER_COLORS = {
@@ -390,14 +390,14 @@ function renderCanvas() {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, cW, cH);
 
-    // 棋盘格背景
-    for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-            if ((x+y)%2===0) {
-                ctx.fillStyle = '#f5f5f5';
-                ctx.fillRect(MARGIN+x*BEAD_SIZE, MARGIN+y*BEAD_SIZE, BEAD_SIZE, BEAD_SIZE);
-            }
-        }
+    // 行列间隔填充（每10格高亮一列/行）
+    for (let x = 10; x <= w; x+=10) {
+        ctx.fillStyle = '#fff8e1';
+        ctx.fillRect(MARGIN + x*BEAD_SIZE - 0.5, MARGIN, 1, h*BEAD_SIZE);
+    }
+    for (let y = 10; y <= h; y+=10) {
+        ctx.fillStyle = '#fff8e1';
+        ctx.fillRect(MARGIN, MARGIN + y*BEAD_SIZE - 0.5, w*BEAD_SIZE, 1);
     }
 
     // 绘制珠子（带序号）
@@ -417,7 +417,7 @@ function renderCanvas() {
 
     // 网格线
     if (showGrid) {
-        ctx.strokeStyle = '#cccccc';
+        ctx.strokeStyle = '#999';
         ctx.lineWidth = GRID_LINE;
         for (let x = 0; x <= w; x++) {
             ctx.beginPath();
@@ -470,34 +470,35 @@ function renderCanvas() {
 }
 
 function drawBead(x, y, color, num) {
-    const s = BEAD_SIZE - 2;
+    const s = BEAD_SIZE - 1;  // 豆子填满格子
     const cx = x + BEAD_SIZE/2, cy = y + BEAD_SIZE/2;
+    // 圆形珠子
     ctx.beginPath();
     ctx.arc(cx, cy, s/2, 0, Math.PI*2);
     ctx.fillStyle = color;
     ctx.fill();
     // 高光
     ctx.beginPath();
-    ctx.arc(cx - s/5, cy - s/5, s/5, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.arc(cx - s/4, cy - s/4, s/4.5, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.fill();
     // 边框
     ctx.beginPath();
     ctx.arc(cx, cy, s/2, 0, Math.PI*2);
-    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
     ctx.lineWidth = 1;
     ctx.stroke();
-    // 豆子编号（显示在格子左上角，清晰小号灰字）
+    // 豆子编号（格子左上角，清晰可读）
     if (num && num > 0) {
-        // 阴影（保证白底也可读）
+        const fontSize = Math.max(8, Math.floor(BEAD_SIZE * 0.42));
+        ctx.font = `bold ${fontSize}px Arial`;
+        // 白底描边保证可读
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.font = `${Math.max(7, Math.floor(BEAD_SIZE * 0.5))}px Arial`;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText(num, x + 1, y);
-        // 主字（深灰）
-        ctx.fillStyle = '#444';
-        ctx.fillText(num, x + 1, y);
+        ctx.fillText(num, x + 1.5, y + 0.5);
+        ctx.fillStyle = '#222';
+        ctx.fillText(num, x + 1.5, y + 0.5);
     }
 }
 
