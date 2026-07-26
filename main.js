@@ -417,7 +417,7 @@ function renderCanvas() {
 
     // 网格线
     if (showGrid) {
-        ctx.strokeStyle = '#999';
+        ctx.strokeStyle = '#bbb';
         ctx.lineWidth = GRID_LINE;
         for (let x = 0; x <= w; x++) {
             ctx.beginPath();
@@ -450,18 +450,20 @@ function renderCanvas() {
         }
     }
 
-    // 行列编号
+    // 行列编号（坐标轴标签）
     if (showNumbers) {
-        ctx.fillStyle = '#999';
-        ctx.font = `${NUMBER_FONT}px Arial`;
+        ctx.fillStyle = '#666';
+        ctx.font = `bold ${NUMBER_FONT}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
+        // 顶部 X 轴（1,2,3...）
         for (let x = 0; x < w; x++) {
-            ctx.fillText(x+1, MARGIN + x*BEAD_SIZE + BEAD_SIZE/2, MARGIN - 12);
+            ctx.fillText(x+1, MARGIN + x*BEAD_SIZE + BEAD_SIZE/2, MARGIN - 16);
         }
+        // 左侧 Y 轴（1,2,3...）
         ctx.textAlign = 'right';
         for (let y = 0; y < h; y++) {
-            ctx.fillText(y+1, MARGIN - 4, MARGIN + y*BEAD_SIZE + BEAD_SIZE/2);
+            ctx.fillText(y+1, MARGIN - 8, MARGIN + y*BEAD_SIZE + BEAD_SIZE/2);
         }
     }
 
@@ -470,47 +472,29 @@ function renderCanvas() {
 }
 
 function drawBead(x, y, color, num) {
-    const s = BEAD_SIZE - 1;  // 豆子填满格子
-    const cx = x + BEAD_SIZE/2, cy = y + BEAD_SIZE/2;
-    // 圆形珠子
-    ctx.beginPath();
-    ctx.arc(cx, cy, s/2, 0, Math.PI*2);
+    // 方块填满（和参考图一致）
     ctx.fillStyle = color;
-    ctx.fill();
-    // 高光
-    ctx.beginPath();
-    ctx.arc(cx - s/4, cy - s/4, s/4.5, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fill();
-    // 边框
-    ctx.beginPath();
-    ctx.arc(cx, cy, s/2, 0, Math.PI*2);
-    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    // 豆子编号（格子左上角，清晰可读）
+    ctx.fillRect(x, y, BEAD_SIZE, BEAD_SIZE);
+    // 豆子编号（格子左上角，清晰小号）
     if (num && num > 0) {
-        const fontSize = Math.max(8, Math.floor(BEAD_SIZE * 0.42));
-        ctx.font = `bold ${fontSize}px Arial`;
-        // 白底描边保证可读
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        const fontSize = Math.max(7, Math.floor(BEAD_SIZE * 0.36));
+        ctx.font = `${fontSize}px Arial`;
+        // 白底描边
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText(num, x + 1.5, y + 0.5);
-        ctx.fillStyle = '#222';
-        ctx.fillText(num, x + 1.5, y + 0.5);
+        ctx.fillText(num, x + 1, y);
+        ctx.fillStyle = '#333';
+        ctx.fillText(num, x + 1, y);
     }
 }
 
 function drawBlankBead(x, y) {
-    const s = BEAD_SIZE - 2;
-    const cx = x + BEAD_SIZE/2, cy = y + BEAD_SIZE/2;
-    ctx.beginPath();
-    ctx.arc(cx, cy, s/2, 0, Math.PI*2);
+    // 空白格子：细虚线边框
     ctx.strokeStyle = '#ddd';
     ctx.lineWidth = 1;
-    ctx.setLineDash([2,2]);
-    ctx.stroke();
+    ctx.setLineDash([3,3]);
+    ctx.strokeRect(x + 2, y + 2, BEAD_SIZE - 4, BEAD_SIZE - 4);
     ctx.setLineDash([]);
 }
 
