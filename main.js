@@ -264,13 +264,8 @@ function loadImage(file) {
         const img = new Image();
         img.onload = () => {
             currentImage = img;
-            beadData = null;
-            document.getElementById('uploadZone').classList.add('hidden');
-            document.getElementById('canvasEditor').classList.remove('hidden');
-            document.getElementById('toolbarArea').classList.remove('hidden');
-            document.getElementById('statusTip').textContent = '提示：按空格+拖动平移，Ctrl+滚轮缩放';
-            // 自动生成
-            setTimeout(() => generatePerlerBeads(), 100);
+            // 显示裁剪弹窗
+            showCropModal(img);
         };
         img.src = e.target.result;
     };
@@ -1188,7 +1183,160 @@ function downloadImage() {
     link.click();
 }
 function downloadPDF() {
-    alert('PDF导出功能开发中，敬请期待！');
+    if (!beadData) { 
+        alert('请先生成图案'); 
+        return; 
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+        orientation: beadData[0].length > beadData.length ? 'landscape' : 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+    
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 10;
+    const titleHeight = 15;
+    const footerHeight = 20;
+    
+    // 标题
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PixelBead 拼豆图纸', pageWidth / 2, margin + 8, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${gridWidth} x ${gridHeight} | 品牌: ${brand} | 生成时间: ${new Date().toLocaleDateString()}`, pageWidth / 2, margin + 13, { align: 'center' });
+    
+    // 计算画布尺寸
+    const availableWidth = pageWidth - margin * 2;
+    const availableHeight = pageHeight - margin * 2 - titleHeight - footerHeight;
+    const cellSize = Math.min(availableWidth / gridWidth, availableHeight / gridHeight);
+    const canvasWidth = cellSize * gridWidth;
+    const canvasHeight = cellSize * gridHeight;
+    const startX = (pageWidth - canvasWidth) / 2;
+    const startY = margin + titleHeight + 5;
+    
+    // 绘制网格和颜色
+    doc.setLineWidth(0.1);
+    for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+            const cell = beadData[y][x];
+            const px = startX + x * cellSize;
+            const py = startY + y * cellSize;
+            
+            // 填充颜色
+            if (cell && cell.hex) {
+                const rgb = hexToRgb(cell.hex);
+                doc.setFillColor(rgb.r, rgb.g, rgb.b);
+                doc.rect(px, py, cellSize, cellSize, 'F');
+            }
+            
+            // 网格线
+            doc.setDrawColor(180, 180, 180);
+            doc.rect(px, py, cellSize, cellSize, 'S');
+            
+            // 色号标注（网格较大时显示）
+            if (cell && cell.code && cellSize > 5) {
+                doc.setFontSize(Math.max(2, cellSize * 0.4));
+                doc.setTextColor(50, 50, 50);
+                doc.text(cell.code, px + cellSize / 2, py + cellSize / 2 + 0.5, { align: 'center' });
+            }
+        }
+    }
+    
+    // 物料清单（第二页）
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('物料清单', pageWidth / 2, margin + 8, { align: 'center' });
+    
+    const counts = {};
+    for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+            const cell = beadData[y][x];
+            if (cell && cell.code) {
+                const key = `${cell.code}|${cell.hex}|${cell.name}`;
+                counts[key] = (counts[key] || 0) + 1;
+            }
+        }
+    }
+    
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    
+    let lineY = margin + 20;
+    doc.setTextColor(80, 80, 80);
+    doc.text('色号', margin, lineY);
+    doc.text('颜色', margin + 30, lineY);
+    doc.text('名称', margin + 50, lineY);
+    doc.text('数量', margin + 90, lineY);
+    doc.text('小计', margin + 110, lineY);
+    
+    lineY += 5;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, lineY, pageWidth - margin, lineY);
+    lineY += 5;
+    
+    let totalBeads = 0;
+    let colorCount = 0;
+    
+    sorted.forEach(([key, count]) => {
+        const [code, hex, name] = key.split('|');
+        const rgb = hexToRgb(hex);
+        
+        // 色块
+        doc.setFillColor(rgb.r, rgb.g, rgb.b);
+        doc.rect(margin + 25, lineY - 3, 15, 6, 'F');
+        doc.setDrawColor(150, 150, 150);
+        doc.rect(margin + 25, lineY - 3, 15, 6, 'S');
+        
+        doc.setTextColor(50, 50, 50);
+        doc.text(code, margin + 5, lineY);
+        doc.text(name || '-', margin + 50, lineY);
+        doc.text(count.toString(), margin + 90, lineY);
+        doc.text(count.toString(), margin + 110, lineY);
+        
+        lineY += 8;
+        totalBeads += count;
+        colorCount++;
+        
+        if (lineY > pageHeight - margin - 20) {
+            doc.addPage();
+            lineY = margin + 15;
+        }
+    });
+    
+    // 总计
+    lineY += 5;
+    doc.setDrawColor(100, 100, 100);
+    doc.line(margin, lineY, pageWidth - margin, lineY);
+    lineY += 8;
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(43, 120, 240);
+    doc.text(`总计: ${colorCount} 种颜色 | ${totalBeads} 颗豆子`, margin, lineY);
+    
+    // 下载
+    const filename = `PixelBead_${gridWidth}x${gridHeight}_${new Date().toISOString().slice(0,10)}.pdf`;
+    doc.save(filename);
+    
+    document.getElementById('statusTip').textContent = 'PDF 已下载: ' + filename;
+}
+
+// 十六进制转 RGB
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : { r: 255, g: 255, b: 255 };
 }
 
 // ---------- 卡密验证 ----------
@@ -1312,6 +1460,318 @@ function hideProDrawer() {
         proDrawer.style.display = 'none';
     }
 }
+
+// ---------- 裁剪弹窗 ----------
+let cropModal = null;
+let cropCanvas, cropCtx;
+let cropImage = null;
+let cropX = 0, cropY = 0, cropW = 100, cropH = 100;
+let cropScale = 1;
+let cropRatio = 'free'; // 'free', '1:1', '4:3', '16:9', '3:4', '9:16'
+let isDraggingCrop = false;
+let dragCropStart = { x: 0, y: 0 };
+
+function showCropModal(img) {
+    cropImage = img;
+    
+    if (!cropModal) {
+        cropModal = document.createElement('div');
+        cropModal.id = 'cropModal';
+        cropModal.className = 'modal-overlay';
+        cropModal.innerHTML = `
+            <div class="modal-content crop-modal-content">
+                <div class="modal-header">
+                    <h3>✂️ 裁剪图片</h3>
+                    <button class="modal-close" onclick="closeCropModal()">✕</button>
+                </div>
+                <div class="crop-body">
+                    <div class="crop-preview-area">
+                        <canvas id="cropCanvas"></canvas>
+                        <div class="crop-box" id="cropBox"></div>
+                    </div>
+                    <div class="crop-controls">
+                        <div class="crop-control-group">
+                            <label>缩放</label>
+                            <input type="range" id="cropScaleSlider" min="10" max="200" value="100" oninput="updateCropScale(this.value)">
+                            <span id="cropScaleValue">100%</span>
+                        </div>
+                        <div class="crop-control-group">
+                            <label>裁剪框大小</label>
+                            <input type="range" id="cropSizeSlider" min="50" max="500" value="200" oninput="updateCropSize(this.value)">
+                            <span id="cropSizeValue">200px</span>
+                        </div>
+                        <div class="crop-control-group">
+                            <label>比例预设</label>
+                            <div class="crop-ratio-btns">
+                                <button class="ratio-btn active" onclick="setCropRatio('free')">自由</button>
+                                <button class="ratio-btn" onclick="setCropRatio('1:1')">1:1</button>
+                                <button class="ratio-btn" onclick="setCropRatio('4:3')">4:3</button>
+                                <button class="ratio-btn" onclick="setCropRatio('3:4')">3:4</button>
+                                <button class="ratio-btn" onclick="setCropRatio('16:9')">16:9</button>
+                            </div>
+                        </div>
+                        <div class="crop-control-group">
+                            <button class="btn-secondary" onclick="resetCrop()">重置</button>
+                            <button class="btn-secondary" onclick="centerCrop()">居中</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="skipCrop()">跳过裁剪</button>
+                    <button class="btn-primary" onclick="applyCrop()">确认裁剪</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(cropModal);
+        
+        cropCanvas = document.getElementById('cropCanvas');
+        cropCtx = cropCanvas.getContext('2d');
+        
+        // 裁剪框拖动
+        const cropBox = document.getElementById('cropBox');
+        cropBox.addEventListener('mousedown', startDragCrop);
+        cropBox.addEventListener('touchstart', startDragCrop);
+        document.addEventListener('mousemove', dragCrop);
+        document.addEventListener('touchmove', dragCrop);
+        document.addEventListener('mouseup', stopDragCrop);
+        document.addEventListener('touchend', stopDragCrop);
+    }
+    
+    // 初始化裁剪参数
+    const maxSize = Math.min(img.width, img.height, 400);
+    cropW = maxSize;
+    cropH = maxSize;
+    cropX = (img.width - cropW) / 2;
+    cropY = (img.height - cropH) / 2;
+    cropScale = 100;
+    
+    document.getElementById('cropScaleSlider').value = 100;
+    document.getElementById('cropScaleValue').textContent = '100%';
+    document.getElementById('cropSizeSlider').value = maxSize;
+    document.getElementById('cropSizeValue').textContent = maxSize + 'px';
+    
+    drawCropPreview();
+    cropModal.classList.add('show');
+}
+
+function drawCropPreview() {
+    if (!cropImage) return;
+    
+    const canvasSize = 400;
+    cropCanvas.width = canvasSize;
+    cropCanvas.height = canvasSize;
+    
+    // 绘制棋盘格背景
+    const checkSize = 10;
+    for (let y = 0; y < canvasSize; y += checkSize) {
+        for (let x = 0; x < canvasSize; x += checkSize) {
+            cropCtx.fillStyle = ((x + y) / checkSize % 2 === 0) ? '#f0f0f0' : '#ffffff';
+            cropCtx.fillRect(x, y, checkSize, checkSize);
+        }
+    }
+    
+    // 计算缩放后的图片尺寸和位置
+    const scale = cropScale / 100;
+    const imgW = cropImage.width * scale;
+    const imgH = cropImage.height * scale;
+    const imgX = (canvasSize - imgW) / 2;
+    const imgY = (canvasSize - imgH) / 2;
+    
+    // 绘制图片
+    cropCtx.drawImage(cropImage, imgX, imgY, imgW, imgH);
+    
+    // 绘制遮罩层（裁剪框外半透明）
+    cropCtx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    
+    // 计算裁剪框在 canvas 中的位置
+    const boxX = imgX + cropX * scale;
+    const boxY = imgY + cropY * scale;
+    const boxW = cropW * scale;
+    const boxH = cropH * scale;
+    
+    // 遮罩（四个区域）
+    cropCtx.fillRect(0, 0, canvasSize, boxY); // 上
+    cropCtx.fillRect(0, boxY + boxH, canvasSize, canvasSize - boxY - boxH); // 下
+    cropCtx.fillRect(0, boxY, boxX, boxH); // 左
+    cropCtx.fillRect(boxX + boxW, boxY, canvasSize - boxX - boxW, boxH); // 右
+    
+    // 裁剪框边框
+    cropCtx.strokeStyle = '#2b78f0';
+    cropCtx.lineWidth = 2;
+    cropCtx.strokeRect(boxX, boxY, boxW, boxH);
+    
+    // 更新裁剪框 DOM 元素位置
+    const cropBox = document.getElementById('cropBox');
+    cropBox.style.left = boxX + 'px';
+    cropBox.style.top = boxY + 'px';
+    cropBox.style.width = boxW + 'px';
+    cropBox.style.height = boxH + 'px';
+}
+
+function updateCropScale(val) {
+    cropScale = parseInt(val);
+    document.getElementById('cropScaleValue').textContent = val + '%';
+    drawCropPreview();
+}
+
+function updateCropSize(val) {
+    const size = parseInt(val);
+    document.getElementById('cropSizeValue').textContent = size + 'px';
+    
+    // 根据比例调整裁剪框
+    if (cropRatio === 'free') {
+        cropW = size;
+        cropH = size;
+    } else if (cropRatio === '1:1') {
+        cropW = size;
+        cropH = size;
+    } else if (cropRatio === '4:3') {
+        cropW = size;
+        cropH = size * 0.75;
+    } else if (cropRatio === '3:4') {
+        cropW = size;
+        cropH = size * 1.33;
+    } else if (cropRatio === '16:9') {
+        cropW = size;
+        cropH = size * 0.5625;
+    }
+    
+    // 确保裁剪框不超出图片范围
+    const scale = cropScale / 100;
+    const imgW = cropImage.width * scale;
+    const imgH = cropImage.height * scale;
+    cropW = Math.min(cropW, imgW);
+    cropH = Math.min(cropH, imgH);
+    
+    drawCropPreview();
+}
+
+function setCropRatio(ratio) {
+    cropRatio = ratio;
+    document.querySelectorAll('.ratio-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === (ratio === 'free' ? '自由' : ratio));
+    });
+    
+    // 根据比例调整裁剪框
+    const currentSize = cropW;
+    updateCropSize(currentSize);
+}
+
+function resetCrop() {
+    const maxSize = Math.min(cropImage.width, cropImage.height, 400);
+    cropW = maxSize;
+    cropH = maxSize;
+    cropX = (cropImage.width - cropW) / 2;
+    cropY = (cropImage.height - cropH) / 2;
+    cropScale = 100;
+    cropRatio = 'free';
+    
+    document.getElementById('cropScaleSlider').value = 100;
+    document.getElementById('cropScaleValue').textContent = '100%';
+    document.getElementById('cropSizeSlider').value = maxSize;
+    document.getElementById('cropSizeValue').textContent = maxSize + 'px';
+    
+    document.querySelectorAll('.ratio-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector('.ratio-btn').classList.add('active');
+    
+    drawCropPreview();
+}
+
+function centerCrop() {
+    cropX = (cropImage.width - cropW) / 2;
+    cropY = (cropImage.height - cropH) / 2;
+    drawCropPreview();
+}
+
+function startDragCrop(e) {
+    isDraggingCrop = true;
+    const pos = getEventPos(e);
+    dragCropStart = { x: pos.x, y: pos.y };
+}
+
+function dragCrop(e) {
+    if (!isDraggingCrop) return;
+    
+    const pos = getEventPos(e);
+    const dx = pos.x - dragCropStart.x;
+    const dy = pos.y - dragCropStart.y;
+    
+    // 移动裁剪框（考虑缩放）
+    const scale = cropScale / 100;
+    cropX -= dx / scale;
+    cropY -= dy / scale;
+    
+    // 边界限制
+    cropX = Math.max(0, Math.min(cropX, cropImage.width - cropW));
+    cropY = Math.max(0, Math.min(cropY, cropImage.height - cropH));
+    
+    dragCropStart = { x: pos.x, y: pos.y };
+    drawCropPreview();
+}
+
+function stopDragCrop() {
+    isDraggingCrop = false;
+}
+
+function getEventPos(e) {
+    const rect = cropCanvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+    };
+}
+
+function closeCropModal() {
+    if (cropModal) {
+        cropModal.classList.remove('show');
+    }
+}
+
+function skipCrop() {
+    closeCropModal();
+    // 直接使用原图生成
+    beadData = null;
+    document.getElementById('uploadZone').classList.add('hidden');
+    document.getElementById('canvasEditor').classList.remove('hidden');
+    document.getElementById('toolbarArea').classList.remove('hidden');
+    document.getElementById('statusTip').textContent = '提示：按空格+拖动平移，Ctrl+滚轮缩放';
+    setTimeout(() => generatePerlerBeads(), 100);
+}
+
+function applyCrop() {
+    if (!cropImage) return;
+    
+    // 创建裁剪后的图片
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = cropW;
+    tempCanvas.height = cropH;
+    
+    // 绘制裁剪区域
+    tempCtx.drawImage(
+        cropImage,
+        cropX, cropY, cropW, cropH,
+        0, 0, cropW, cropH
+    );
+    
+    // 转换为 Image 对象
+    const croppedImg = new Image();
+    croppedImg.onload = () => {
+        currentImage = croppedImg;
+        closeCropModal();
+        
+        beadData = null;
+        document.getElementById('uploadZone').classList.add('hidden');
+        document.getElementById('canvasEditor').classList.remove('hidden');
+        document.getElementById('toolbarArea').classList.remove('hidden');
+        document.getElementById('statusTip').textContent = '已裁剪，按空格+拖动平移，Ctrl+滚轮缩放';
+        setTimeout(() => generatePerlerBeads(), 100);
+    };
+    croppedImg.src = tempCanvas.toDataURL();
+}
+
 
 function getCurrentColors() {
     const brands = {

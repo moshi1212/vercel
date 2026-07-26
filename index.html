@@ -3,42 +3,309 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>卡密验证系统</title>
+    <title>PixelBead 像素拼豆工坊 | 一键高清拼豆图纸生成器</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>🔐 卡密验证系统</h1>
-        
-        <div class="card">
-            <h2>验证卡密</h2>
-            <div class="form-group">
-                <label for="phone">手机号</label>
-                <input type="tel" id="phone" placeholder="请输入11位手机号" maxlength="11">
+    <!-- 顶部导航 -->
+    <header class="home-header">
+        <div class="home-container">
+            <div class="home-logo">
+                <span class="logo-icon">🧶</span>
+                <div class="logo-text">
+                    <span class="logo-title">PixelBead</span>
+                    <span class="logo-subtitle">像素拼豆工坊</span>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="license">卡密</label>
-                <input type="text" id="license" placeholder="请输入10位卡密" maxlength="10">
+            <nav class="home-nav">
+                <a href="main.html" class="nav-link">开始创作</a>
+                <a href="#features" class="nav-link">功能特色</a>
+                <a href="#tutorial" class="nav-link">使用教程</a>
+                <a href="#contact" class="nav-link">联系我们</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 主区域：双入口 -->
+    <main class="home-main">
+        <div class="home-hero">
+            <h1 class="hero-title">一键生成高清拼豆图纸</h1>
+            <p class="hero-desc">上传图片，自动转换为拼豆图案，支持 MARD/Perler/Hama/Artkal 等主流品牌色号</p>
+            
+            <!-- 双入口按钮 -->
+            <div class="home-entries">
+                <a href="main.html" class="entry-card entry-upload">
+                    <div class="entry-icon">📤</div>
+                    <div class="entry-title">上传图片生成</div>
+                    <div class="entry-desc">上传照片，一键转换为拼豆图案</div>
+                </a>
+                <a href="main.html?mode=blank" class="entry-card entry-blank">
+                    <div class="entry-icon">🎨</div>
+                    <div class="entry-title">空白画布创作</div>
+                    <div class="entry-desc">从零开始，自由设计你的作品</div>
+                </a>
             </div>
-            <button id="verifyBtn" class="btn-primary">验证卡密</button>
-            <div id="message" class="message"></div>
         </div>
 
-        <div class="card">
-            <h2>获取卡密</h2>
-            <p>如需购买卡密，请联系客服：</p>
+        <!-- 效果展示区 -->
+        <section class="home-showcase" id="showcase">
+            <h2 class="section-title">效果展示</h2>
+            <div class="showcase-grid">
+                <div class="showcase-item">
+                    <div class="showcase-before">
+                        <img src="https://via.placeholder.com/300x300/e8e8e8/999?text=原图" alt="原图示例">
+                        <span class="showcase-label">原图</span>
+                    </div>
+                    <div class="showcase-after">
+                        <img src="https://via.placeholder.com/300x300/f5f5f5/666?text=拼豆效果" alt="拼豆效果">
+                        <span class="showcase-label">拼豆效果</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 功能特色 6 宫格 -->
+        <section class="home-features" id="features">
+            <h2 class="section-title">功能特色</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>智能配色</h3>
+                    <p>自动将图片颜色映射到拼豆色库，支持 220+ 色号</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">✂️</div>
+                    <h3>裁剪优化</h3>
+                    <p>上传后可裁剪图片，调整范围和比例</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <h3>精细编辑</h3>
+                    <p>画笔、橡皮、魔棒、填充，逐颗豆子微调</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>物料清单</h3>
+                    <p>自动统计所需豆子数量和色号，导出 Excel</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📄</div>
+                    <h3>高清导出</h3>
+                    <p>PNG/PDF 矢量图纸，打印清晰不失真</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h3>项目保存</h3>
+                    <p>保存工程文件，随时继续创作</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 使用教程 -->
+        <section class="home-tutorial" id="tutorial">
+            <h2 class="section-title">使用教程</h2>
+            <div class="tutorial-steps">
+                <div class="step-item">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h3>上传图片</h3>
+                        <p>支持 JPG/PNG/WEBP 格式，建议使用清晰图片</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h3>设置参数</h3>
+                        <p>选择品牌、网格大小、颜色数量等参数</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h3>一键生成</h3>
+                        <p>点击生成按钮，自动转换为拼豆图案</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <h3>微调导出</h3>
+                        <p>精细编辑后导出图纸和物料清单</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 联系我们 -->
+        <section class="home-contact" id="contact">
+            <h2 class="section-title">联系我们</h2>
             <div class="contact-info">
                 <p>📱 微信：kaxill</p>
                 <p>📧 邮箱：617171856@qq.com</p>
             </div>
-            <button id="contactBtn" class="btn-secondary">联系客服</button>
-        </div>
+        </section>
+    </main>
 
-        <div class="footer">
-            <a href="admin.html" class="admin-link">管理后台</a>
-        </div>
-    </div>
+    <!-- 页脚 -->
+    <footer class="home-footer">
+        <p>&copy; 2026 PixelBead 像素拼豆工坊 | 专业拼豆图纸生成工具</p>
+    </footer>
 
-    <script src="script.js"></script>
+    <style>
+        /* 首页专用样式 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f7fa; color: #333; }
+        
+        .home-header {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .home-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .home-logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { font-size: 32px; }
+        .logo-title { font-size: 20px; font-weight: 700; color: #2b78f0; }
+        .logo-subtitle { font-size: 12px; color: #888; }
+        
+        .home-nav { display: flex; gap: 24px; }
+        .nav-link { text-decoration: none; color: #666; font-size: 14px; transition: color 0.2s; }
+        .nav-link:hover { color: #2b78f0; }
+        
+        .home-main { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+        
+        .home-hero { text-align: center; margin-bottom: 60px; }
+        .hero-title { font-size: 48px; font-weight: 700; margin-bottom: 16px; color: #333; }
+        .hero-desc { font-size: 18px; color: #666; margin-bottom: 40px; }
+        
+        .home-entries { display: flex; gap: 24px; justify-content: center; }
+        .entry-card {
+            flex: 1;
+            max-width: 320px;
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        .entry-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(43,120,240,0.2);
+            border-color: #2b78f0;
+        }
+        .entry-icon { font-size: 48px; margin-bottom: 16px; }
+        .entry-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; color: #333; }
+        .entry-desc { font-size: 14px; color: #888; }
+        .entry-upload { background: linear-gradient(135deg, #fff 0%, #f0f7ff 100%); }
+        .entry-blank { background: linear-gradient(135deg, #fff 0%, #fff5f0 100%); }
+        
+        .section-title {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: #333;
+        }
+        
+        .home-showcase { margin-bottom: 60px; }
+        .showcase-grid { display: flex; justify-content: center; }
+        .showcase-item { display: flex; gap: 40px; align-items: center; }
+        .showcase-before, .showcase-after { position: relative; }
+        .showcase-before img, .showcase-after img {
+            width: 300px;
+            height: 300px;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+        .showcase-label {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .home-features { margin-bottom: 60px; }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+        .feature-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .feature-icon { font-size: 40px; margin-bottom: 12px; }
+        .feature-card h3 { font-size: 18px; margin-bottom: 8px; color: #333; }
+        .feature-card p { font-size: 14px; color: #666; line-height: 1.6; }
+        
+        .home-tutorial { margin-bottom: 60px; }
+        .tutorial-steps { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+        .step-item {
+            flex: 1;
+            max-width: 240px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .step-num {
+            width: 40px;
+            height: 40px;
+            background: #2b78f0;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .step-content { text-align: center; }
+        .step-content h3 { font-size: 16px; margin-bottom: 6px; }
+        .step-content p { font-size: 13px; color: #888; }
+        
+        .home-contact { margin-bottom: 60px; text-align: center; }
+        .contact-info { background: white; padding: 24px; border-radius: 12px; display: inline-block; }
+        .contact-info p { font-size: 16px; margin: 8px 0; color: #666; }
+        
+        .home-footer {
+            background: #333;
+            color: #999;
+            text-align: center;
+            padding: 24px;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .hero-title { font-size: 32px; }
+            .home-entries { flex-direction: column; align-items: center; }
+            .entry-card { max-width: 100%; }
+            .showcase-item { flex-direction: column; }
+            .tutorial-steps { flex-direction: column; align-items: center; }
+        }
+    </style>
 </body>
 </html>
