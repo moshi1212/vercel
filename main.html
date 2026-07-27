@@ -1,366 +1,2249 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PixelBead 像素拼豆工坊 | 一键高清拼豆图纸生成器</title>
-    <link rel="stylesheet" href="main.css">
-    <!-- jsPDF 用于 PDF 导出 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>猫球拼豆 · 编辑器</title>
+<style>
+/* ==========================================
+   PixelBead 像素拼豆工坊 - 样式表
+   ========================================== */
+:root {
+    --primary: #ff9f43;
+    --primary-dark: #e8890f;
+    --bg: #fafaf8;
+    --sidebar-bg: #ffffff;
+    --text: #333;
+    --text-light: #888;
+    --border: #eee;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== 顶部导航 ===== */
+.header {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    z-index: 10;
+}
+.header-left { display: flex; align-items: center; gap: 8px; }
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo-icon { font-size: 24px; }
+.logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+.logo-title { font-size: 15px; font-weight: 700; color: var(--primary); }
+.logo-subtitle { font-size: 11px; color: var(--text-light); }
+.header-center { display: flex; align-items: center; gap: 16px; }
+.preset-grid { display: flex; gap: 4px; }
+.preset-btn {
+    padding: 4px 10px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text);
+    transition: all 0.2s;
+}
+.preset-btn:hover { border-color: var(--primary); color: var(--primary); }
+.preset-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.transform-tools { display: flex; gap: 4px; }
+.header-right { display: flex; align-items: center; gap: 6px; }
+.nav-btn {
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text);
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+.nav-btn:hover { background: #f0f0f0; }
+.nav-btn.small { padding: 4px 8px; font-size: 12px; }
+.btn-primary-small { background: var(--primary); color: #fff; font-weight: 600; }
+.btn-primary-small:hover { background: var(--primary-dark); }
+
+/* ===== 主内容区 ===== */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+.status-bar {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 4px 16px;
+    font-size: 12px;
+    color: var(--text-light);
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    height: 28px;
+    flex-shrink: 0;
+}
+.status-tip { margin-left: auto; }
+.content-wrapper {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* ===== 左侧面板 ===== */
+.left-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #e8e8e8;
+    position: relative;
+    min-width: 0;
+}
+.upload-zone {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px dashed #ccc;
+    border-radius: 12px;
+    margin: 20px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+.upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--primary);
+    background: rgba(255,159,67,0.05);
+}
+.upload-content { text-align: center; }
+.upload-icon { font-size: 48px; margin-bottom: 12px; }
+.upload-content h3 { font-size: 18px; color: var(--text); margin-bottom: 6px; }
+.upload-content p { font-size: 13px; color: var(--text-light); }
+.canvas-editor {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    overflow: auto;
+    padding: 16px;
+    position: relative;
+    background: #eceae3;
+}
+.canvas-wrapper {
+    display: inline-block;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border-radius: 4px;
+    background: #fff;
+    transform-origin: top left;
+    /* transform 由 JS 控制 translate + scale */
+}
+#mainCanvas {
+    display: block;
+    cursor: crosshair;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+.canvas-editor.space-down { cursor: grab; }
+.canvas-editor.panning { cursor: grabbing; }
+
+/* ===== 底部工具栏 ===== */
+.toolbar-area {
+    background: #fff;
+    border-top: 1px solid var(--border);
+    padding: 6px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+.tool-group { display: flex; gap: 4px; }
+.tool-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 5px 8px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--text);
+    transition: all 0.15s;
+    min-width: 42px;
+}
+.tool-btn:hover { border-color: var(--primary); color: var(--primary); }
+.tool-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.tool-icon { font-size: 16px; }
+.tool-label { font-size: 10px; }
+.tool-divider-v { width: 1px; height: 36px; background: var(--border); margin: 0 4px; }
+
+/* ===== 右侧边栏 ===== */
+.sidebar {
+    width: 280px;
+    background: var(--sidebar-bg);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    flex-shrink: 0;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+.sidebar-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+}
+.sidebar-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 10px;
+}
+.brand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.brand-btn {
+    padding: 7px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text);
+    transition: all 0.15s;
+}
+.brand-btn:hover { border-color: var(--primary); color: var(--primary); }
+.brand-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.param-item { margin-bottom: 10px; }
+.param-item:last-child { margin-bottom: 0; }
+.param-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+.param-value { color: var(--primary); font-weight: 600; }
+.param-slider {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    background: #eee;
+    border-radius: 2px;
+    outline: none;
+}
+.param-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+}
+.toggle-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+    position: absolute; inset: 0;
+    background: #ccc; border-radius: 20px;
+    transition: 0.2s;
+    cursor: pointer;
+}
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    left: 2px; bottom: 2px;
+    background: #fff; border-radius: 50%;
+    transition: 0.2s;
+}
+.toggle-switch input:checked + .toggle-slider { background: var(--primary); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
+.btn-reset {
+    width: 100%; padding: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-light);
+    margin-top: 6px;
+}
+.btn-reset:hover { border-color: var(--primary); color: var(--primary); }
+.action-card { display: flex; flex-direction: column; gap: 8px; }
+.btn-generate {
+    width: 100%; padding: 12px;
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-generate:hover { background: var(--primary-dark); }
+.color-list { max-height: 180px; overflow-y: auto; }
+.color-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid #f5f5f5;
+    cursor: pointer;
+    border-radius: 6px;
+}
+.color-item:hover { background: #f9f9f9; }
+.color-item.excluded { opacity: 0.4; }
+.color-swatch { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.1); }
+.color-details { display: flex; flex-direction: column; flex: 1; }
+.color-code { font-size: 11px; font-weight: 600; color: var(--text); }
+.color-name { font-size: 10px; color: var(--text-light); }
+.color-count { font-size: 11px; color: var(--primary); font-weight: 600; }
+.color-empty { font-size: 12px; color: var(--text-light); text-align: center; padding: 16px 0; }
+.current-color {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+    padding: 8px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+.color-preview {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.1);
+    flex-shrink: 0;
+}
+.color-info { display: flex; flex-direction: column; }
+.color-code { font-size: 13px; font-weight: 700; }
+.color-name { font-size: 11px; color: var(--text-light); }
+.color-palette {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+.palette-color {
+    width: 28px; height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(0,0,0,0.7);
+    text-shadow: 0 0 2px rgba(255,255,255,0.9);
+    font-size: 8px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+    image-rendering: pixelated;
+    -webkit-text-size-adjust: 100%;
+}
+
+.palette-color:hover { transform: scale(1.15); }
+.palette-color.active { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(255,159,67,0.3); }
+.palette-color.compact { width: 24px; height: 24px; }
+
+/* ===== 局部放大镜 ===== */
+.magnifier-window {
+    position: fixed;
+    top: 80px;
+    right: 300px;
+    width: 280px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    z-index: 100;
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+}
+.magnifier-header {
+    background: linear-gradient(135deg, var(--primary), #ffb347);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: move;
+}
+.magnifier-title { font-size: 13px; font-weight: 700; color: #fff; flex: 1; }
+.magnifier-zoom-btns { display: flex; gap: 3px; }
+.mag-zoom-btn {
+    padding: 2px 6px;
+    border: none;
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.mag-zoom-btn.active { background: #fff; color: var(--primary); }
+.mag-close { background: none; border: none; color: #fff; font-size: 16px; cursor: pointer; }
+.magnifier-body {
+    display: flex; justify-content: center; align-items: center;
+    background: #f0f0f0;
+    min-height: 256px;
+}
+#magCanvas { display: block; image-rendering: pixelated; }
+.magnifier-coord {
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-top: 1px solid var(--border);
+    background: #fff;
+}
+.magnifier-hint {
+    padding: 4px 12px 8px;
+    font-size: 10px;
+    color: var(--text-light);
+    background: #fff;
+}
+
+/* ===== 弹窗 ===== */
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200;
+}
+.modal {
+    background: #fff;
+    border-radius: 14px;
+    width: 90%; max-width: 480px;
+    max-height: 80vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.modal-large { max-width: 600px; }
+.modal-small { max-width: 360px; }
+.modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h2 { font-size: 16px; }
+.modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-light); }
+.modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+.hidden { display: none !important; }
+.tutorial-step { display: flex; gap: 16px; margin-bottom: 20px; align-items: flex-start; }
+.step-num {
+    width: 32px; height: 32px;
+    background: var(--primary); color: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+    flex-shrink: 0;
+}
+.step-content h3 { font-size: 14px; margin-bottom: 4px; }
+.step-content p { font-size: 13px; color: var(--text-light); }
+.history-item {
+    display: flex; gap: 12px; align-items: center;
+    padding: 8px; border-bottom: 1px solid var(--border);
+    cursor: pointer; border-radius: 8px;
+}
+.history-item:hover { background: #f9f9f9; }
+.history-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+.history-empty { text-align: center; color: var(--text-light); padding: 30px 0; font-size: 13px; }
+.fullscreen-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.9);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 300;
+}
+.fullscreen-close {
+    position: absolute; top: 16px; right: 20px;
+    background: rgba(255,255,255,0.2); border: none;
+    color: #fff; font-size: 28px; cursor: pointer;
+    width: 40px; height: 40px; border-radius: 50%;
+}
+#fullscreenCanvas { max-width: 95vw; max-height: 95vh; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 13px; margin-bottom: 4px; font-weight: 600; }
+.form-group input {
+    width: 100%; padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+}
+.form-group input:focus { border-color: var(--primary); }
+.btn-verify {
+    width: 100%; padding: 10px;
+    border: none; background: var(--primary);
+    color: #fff; border-radius: 8px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+}
+.btn-verify:hover { background: var(--primary-dark); }
+.message {
+    margin-top: 10px; padding: 8px 12px;
+    border-radius: 6px; font-size: 13px;
+    text-align: center;
+}
+.message.success { background: #e8f5e9; color: #2e7d32; }
+.message.error { background: #ffebee; color: #c62828; }
+.message.info { background: #e3f2fd; color: #1565c0; }
+.contact-section {
+    margin-top: 16px; padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 13px; color: var(--text-light);
+}
+.contact-section p { margin-bottom: 4px; }
+.contact-section strong { color: var(--text); }
+.excel-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.excel-table th { background: #f5f5f5; padding: 8px; text-align: left; border-bottom: 2px solid var(--border); }
+.excel-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); }
+.total-row { background: #fff8e1; font-weight: 700; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+/* ========== 专业全屏模式 ========== */
+body.pro-mode {
+    overflow: hidden;
+}
+
+body.pro-mode .main-content {
+    height: 100vh;
+    padding: 0;
+}
+
+body.pro-mode .left-panel {
+    width: 100%;
+    max-width: 100%;
+}
+
+body.pro-mode .canvas-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: calc(100vh - 80px);
+}
+
+/* 专业模式底部抽屉 */
+#proDrawer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    padding: 12px 20px;
+}
+
+.pro-drawer-inner {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.pro-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pro-tool {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pro-tool:hover {
+    background: #f0f0f0;
+    border-color: var(--primary);
+}
+
+.pro-tool.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.pro-tool.exit {
+    background: #ff4444;
+    color: white;
+    border-color: #ff4444;
+    margin-left: 20px;
+}
+
+.pro-divider {
+    width: 1px;
+    height: 30px;
+    background: #e0e0e0;
+    margin: 0 8px;
+}
+
+.pro-colors {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+    overflow-x: auto;
+    padding: 4px;
+}
+
+.pro-color-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+
+.pro-color-btn:hover {
+    transform: scale(1.1);
+}
+
+.pro-color-btn.active {
+    border-color: #333;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ========== 色板管理弹窗 ========== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 800px;
+    width: 90%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #f0f0f0;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.modal-close:hover {
+    background: #e0e0e0;
+}
+
+.modal-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn-primary {
+    padding: 10px 24px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-secondary {
+    padding: 10px 24px;
+    background: #f0f0f0;
+    color: #666;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+/* 色板管理内容 */
+.palette-modal-content {
+    max-width: 900px;
+}
+
+.palette-brand-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.brand-tab {
+    padding: 8px 16px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.brand-tab:hover {
+    background: #f5f5f5;
+}
+
+.brand-tab.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.palette-search {
+    margin-bottom: 16px;
+}
+
+.palette-search input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.palette-search input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.palette-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.palette-actions button {
+    padding: 6px 12px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.palette-actions button:hover {
+    background: #f5f5f5;
+}
+
+.palette-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.palette-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.palette-item:hover {
+    background: #f5f5f5;
+}
+
+.palette-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.palette-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.palette-code {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #333;
+    font-family: monospace;
+}
+
+.palette-name {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.palette-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* ========== 裁剪弹窗样式 ========== */
+.crop-modal-content {
+    max-width: 700px;
+}
+
+.crop-body {
+    display: flex;
+    gap: 24px;
+    padding: 20px;
+}
+
+.crop-preview-area {
+    position: relative;
+    width: 400px;
+    height: 400px;
+    flex-shrink: 0;
+}
+
+#cropCanvas {
+    width: 400px;
+    height: 400px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: move;
+}
+
+.crop-box {
+    position: absolute;
+    border: 2px solid #2b78f0;
+    cursor: move;
+    background: transparent;
+    pointer-events: auto;
+}
+
+.crop-controls {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.crop-control-group label {
+    display: block;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.crop-control-group input[type="range"] {
+    width: 100%;
+}
+
+.crop-control-group span {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #888;
+}
+
+.crop-ratio-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ratio-btn {
+    padding: 6px 12px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ratio-btn:hover {
+    background: #f5f5f5;
+}
+
+.ratio-btn.active {
+    background: #2b78f0;
+    color: white;
+    border-color: #2b78f0;
+}
+
+
+/* ========== 裁剪弹窗 v2（DOM 模板：8 手柄 + 三按钮） ========== */
+.crop-modal-content {
+    max-width: 760px;
+    width: 92vw;
+}
+.crop-modal-content .modal-header {
+    align-items: flex-start;
+    padding: 20px 24px 12px;
+}
+.crop-title {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+.crop-subtitle {
+    margin: 0;
+    font-size: 12px;
+    color: #888;
+}
+.crop-body {
+    display: flex;
+    gap: 24px;
+    padding: 16px 24px 20px;
+}
+.crop-preview-area {
+    position: relative;
+    width: 400px;
+    height: 400px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #f0f0f0;
+    background-image:
+      linear-gradient(45deg, #e8e8e8 25%, transparent 25%),
+      linear-gradient(-45deg, #e8e8e8 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e8e8e8 75%),
+      linear-gradient(-45deg, transparent 75%, #e8e8e8 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+.crop-preview-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+.crop-img {
+    position: absolute;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+}
+.crop-mask {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+.crop-frame {
+    position: absolute;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 1px rgba(43, 120, 240, 0.4);
+    cursor: move;
+    box-sizing: border-box;
+}
+.crop-handle {
+    position: absolute;
+    background: #ffffff;
+    border: 1px solid #2b78f0;
+    box-sizing: border-box;
+}
+.crop-handle.crop-h-nw,
+.crop-handle.crop-h-ne,
+.crop-handle.crop-h-sw,
+.crop-handle.crop-h-se {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+}
+.crop-handle.crop-h-n,
+.crop-handle.crop-h-s {
+    width: 26px; height: 8px; left: 50%; transform: translateX(-50%);
+    border-radius: 2px;
+}
+.crop-handle.crop-h-e,
+.crop-handle.crop-h-w {
+    width: 8px; height: 26px; top: 50%; transform: translateY(-50%);
+    border-radius: 2px;
+}
+.crop-h-nw { left: -7px; top: -7px; cursor: nwse-resize; }
+.crop-h-ne { right: -7px; top: -7px; cursor: nesw-resize; }
+.crop-h-sw { left: -7px; bottom: -7px; cursor: nesw-resize; }
+.crop-h-se { right: -7px; bottom: -7px; cursor: nwse-resize; }
+.crop-h-n  { top: -4px; cursor: ns-resize; }
+.crop-h-s  { bottom: -4px; cursor: ns-resize; }
+.crop-h-e  { right: -4px; cursor: ew-resize; }
+.crop-h-w  { left: -4px; cursor: ew-resize; }
+
+.crop-controls {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 200px;
+}
+.crop-control-group label {
+    display: block;
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+.crop-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.crop-slider-row input[type="range"] {
+    flex: 1;
+    accent-color: #2b78f0;
+}
+.crop-slider-row span {
+    font-size: 12px;
+    color: #2b78f0;
+    min-width: 48px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.crop-row-btns {
+    display: flex;
+    gap: 10px;
+}
+.crop-row-btns .btn-secondary {
+    flex: 1;
+    padding: 8px 0;
+    border: 1px solid #d0d0d0;
+    background: #fff;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.crop-row-btns .btn-secondary:hover {
+    border-color: #2b78f0;
+    color: #2b78f0;
+}
+.crop-tip {
+    margin: 0;
+    font-size: 12px;
+    color: #888;
+    line-height: 1.6;
+    background: #f7f9fc;
+    padding: 10px 12px;
+    border-radius: 6px;
+}
+.crop-footer {
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 24px 20px;
+}
+.crop-footer .btn-secondary,
+.crop-footer .btn-primary {
+    min-width: 96px;
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+.crop-footer .btn-secondary {
+    background: #fff;
+    border: 1px solid #d0d0d0;
+    color: #555;
+}
+.crop-footer .btn-secondary:hover {
+    border-color: #2b78f0;
+    color: #2b78f0;
+}
+.crop-footer .btn-primary {
+    background: #2b78f0;
+    border: 1px solid #2b78f0;
+    color: #fff;
+}
+.crop-footer .btn-primary:hover {
+    background: #1f5fc7;
+    border-color: #1f5fc7;
+}
+@media (max-width: 720px) {
+    .crop-body { flex-direction: column; }
+    .crop-preview-area { width: 100%; height: 320px; }
+}
+
+
+/* ===== xiaoana editor styles ===== */
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; touch-action: none; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    margin: 0; background: #eef1f7; color: #1f2937; font-size: 14px;
+    display: flex; flex-direction: column; overflow: hidden; height: 100vh;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  input, select { font-family: inherit; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+  .topbar {
+    flex: 0 0 64px;
+    display: flex; align-items: center;
+    padding: 0 24px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    gap: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; }
+  .brand-icon { width: 40px; height: 40px; display: grid; place-items: center; }
+  .brand-icon svg { width: 40px; height: 40px; }
+  .brand-text small { display: block; font-size: 11px; color: #6b7280; font-weight: 400; letter-spacing: .5px; }
+  .spacer { flex: 1; }
+  .mode-toggle { display: inline-flex; background: #f3f4f6; border-radius: 999px; padding: 4px; }
+  .mode-toggle button { padding: 6px 14px; border: 0; background: transparent; border-radius: 999px; font-size: 13px; color: #4b5563; transition: all .15s; }
+  .mode-toggle button.active { background: #3b82f6; color: #fff; box-shadow: 0 1px 3px rgba(59,130,246,.4); }
+  .nav-btn { padding: 8px 14px; border: 1px solid #e5e7eb; background: #fff; border-radius: 8px; font-size: 13px; color: #1f2937; transition: all .15s; }
+  .nav-btn:hover { background: #f9fafb; }
+  .nav-btn.primary { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+  .nav-btn.primary:hover { background: #2563eb; }
+
+  .main {
+    flex: 1; min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 24px;
+    padding: 20px 24px;
+    overflow: hidden;
+  }
+
+  .canvas-wrap {
+    display: flex; flex-direction: column;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .canvas-toolbar {
+    flex: 0 0 56px;
+    display: flex; align-items: center; gap: 4px;
+    padding: 10px 16px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    overflow-x: auto;
+  }
+  .canvas-tool-group { display: flex; gap: 4px; padding: 0 8px; border-right: 1px solid #e5e7eb; }
+  .canvas-tool-group:last-of-type { border-right: 0; }
+  .canvas-tool {
+    width: 36px; height: 36px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 8px;
+    font-size: 16px; color: #374151;
+    display: grid; place-items: center;
+    transition: all .15s;
+    flex-shrink: 0;
+  }
+  .canvas-tool:hover { background: #f3f4f6; }
+  .canvas-tool.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+  .canvas-tool-info {
+    margin-left: auto;
+    font-size: 12px; color: #6b7280;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+  .canvas-tool-info b { color: #3b82f6; }
+
+  .canvas-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; flex: 0 0 auto; border-bottom: 1px solid #f3f4f6; }
+  .canvas-meta { font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 8px; }
+  .canvas-meta b { color: #1f2937; }
+
+  .canvas-viewport {
+    flex: 1; min-height: 0;
+    position: relative;
+    overflow: hidden;
+    background: #f3f4f6;
+    cursor: grab;
+  }
+  .canvas-viewport.dragging { cursor: grabbing; }
+  .canvas-content {
+    position: absolute;
+    transform-origin: 0 0;
+    will-change: transform;
+  }
+
+  .canvas-area {
+    width: 700px; height: 700px;
+    background: repeating-conic-gradient(#e0e7ff 0% 25%, #ffffff 0% 50%) 0 0 / 14px 14px;
+    border: 2px solid #93c5fd;
+    border-radius: 4px;
+    position: relative;
+  }
+  .canvas-grid { display: grid; grid-template-columns: repeat(50, 1fr); grid-template-rows: repeat(50, 1fr); width: 100%; height: 100%; }
+  .cell { border-right: 1px solid #93c5fd20; border-bottom: 1px solid #93c5fd20; cursor: pointer; transition: background .1s; }
+  .cell:hover { background: rgba(59,130,246,.3); }
+  .cell.painted { background: var(--c, #3b82f6); }
+  .coords-top, .coords-left { position: absolute; font-size: 10px; color: #6b7280; pointer-events: none; user-select: none; }
+  .coords-top { top: 4px; left: 0; right: 0; display: flex; justify-content: space-around; padding: 0 4px; }
+  .coords-left { left: 4px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-around; padding: 4px 0; }
+  .label-tag { position: absolute; background: #fff; border: 1px solid #1f2937; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 600; pointer-events: none; }
+
+  .zoom-hint {
+    position: absolute; bottom: 12px; right: 12px;
+    background: rgba(255,255,255,.9);
+    padding: 6px 12px; border-radius: 6px;
+    font-size: 12px; color: #6b7280;
+    pointer-events: none;
+    border: 1px solid #e5e7eb;
+  }
+
+  .side {
+    display: flex; flex-direction: column; gap: 14px;
+    overflow-y: auto;
+    padding-right: 6px;
+    min-height: 0;
+  }
+
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; }
+  .card h3 { margin: 0 0 12px; font-size: 14px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .card h3 .hint { font-size: 11px; color: #9ca3af; font-weight: 400; }
+  .card.collapsed > *:not(h3) { display: none; }
+  .card h3 .toggle { background: transparent; border: 0; color: #6b7280; font-size: 12px; cursor: pointer; padding: 0; }
+  .card h3 .toggle:hover { color: #3b82f6; }
+
+  .param-row { margin-bottom: 12px; }
+  .param-row:last-child { margin-bottom: 0; }
+  .param-row .label-line { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .param-row label { color: #374151; }
+  .param-row .val { color: #3b82f6; font-weight: 700; }
+  .param-row .val.off { color: #9ca3af; }
+  input[type=range] { width: 100%; accent-color: #3b82f6; }
+  input[type=range]:disabled { accent-color: #cbd5e1; }
+  .manual { display: flex; gap: 6px; align-items: center; margin-top: 6px; font-size: 12px; color: #6b7280; }
+  .manual input { width: 70px; padding: 4px 8px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 12px; }
+  .manual button { padding: 4px 12px; border: 1px solid #bfdbfe; color: #3b82f6; background: #eff6ff; border-radius: 6px; font-size: 12px; }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .tool-btn {
+    padding: 8px 6px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #374151;
+    text-align: center;
+    transition: all .15s;
+  }
+  .tool-btn:hover { background: #f9fafb; }
+  .tool-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+  .brush-size { padding-top: 12px; border-top: 1px solid #e5e7eb; }
+  .brush-size label { display: block; font-size: 13px; margin-bottom: 8px; font-weight: 500; }
+  .brush-size-row { display: flex; align-items: center; gap: 10px; }
+  .brush-size-row input[type=range] { flex: 1; }
+  .brush-size-val { font-size: 14px; font-weight: 600; color: #3b82f6; min-width: 20px; text-align: right; }
+
+  .color-palette-section { display: flex; flex-direction: column; gap: 12px; }
+  .palette-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
+  .palette-tab { padding: 5px 10px; border-radius: 999px; background: #eff6ff; border: 1px solid #bfdbfe; font-size: 11px; color: #1d4ed8; cursor: pointer; }
+  .palette-tab.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+  .current-color-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    background: #f3f4f6;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .current-color-row .dot {
+    width: 22px; height: 22px; border-radius: 4px;
+    border: 1px solid #e5e7eb;
+    flex-shrink: 0;
+  }
+
+  .project-colors {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    max-height: 120px;
+    overflow-y: auto;
+    padding: 4px;
+    border: 1px dashed #e5e7eb;
+    border-radius: 6px;
+  }
+  .project-color {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    cursor: pointer;
+    display: grid; place-items: center;
+    font-size: 9px; font-weight: 600;
+    color: #fff;
+    text-shadow: 0 1px 1px rgba(0,0,0,.3);
+    border: 2px solid transparent;
+    transition: all .15s;
+  }
+  .project-color:hover { transform: scale(1.1); }
+  .project-color.active { border-color: #fff; box-shadow: 0 0 0 2px #3b82f6; }
+  .project-color.light { color: #1f2937; text-shadow: none; }
+
+  .impurity-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .impurity-header > div { text-align: center; flex: 1; }
+  .impurity-header h4 { margin: 0 0 4px; font-size: 14px; }
+  .impurity-header p { margin: 0; font-size: 11px; color: #6b7280; line-height: 1.5; }
+  .undo-all-btn {
+    padding: 6px 12px;
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .undo-all-btn:hover { background: #fecaca; }
+  .undo-all-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .impurity-list { max-height: 160px; overflow-y: auto; }
+  .impurity-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .impurity-item:hover { background: #eff6ff; border-color: #bfdbfe; }
+  .impurity-item.merged { opacity: .5; }
+  .impurity-swatch { width: 22px; height: 22px; border-radius: 4px; flex-shrink: 0; }
+  .impurity-name { flex: 1; font-size: 12px; }
+  .impurity-count { font-size: 12px; color: #6b7280; }
+  .impurity-delete { width: 22px; height: 22px; border: 0; background: transparent; color: #9ca3af; font-size: 13px; cursor: pointer; }
+  .impurity-delete:hover { color: #ef4444; }
+
+  .merge-modal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .merge-modal.show { display: flex; }
+  .merge-modal-content {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    width: 360px;
+    max-width: 90%;
+  }
+  .merge-modal-content h3 { margin: 0 0 12px; font-size: 16px; }
+  .merge-modal-content p { margin: 0 0 16px; font-size: 13px; color: #6b7280; }
+  .merge-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 240px; overflow-y: auto; }
+  .merge-option {
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .merge-option:hover { background: #eff6ff; border-color: #3b82f6; }
+  .merge-option .swatch-sm { width: 20px; height: 20px; border-radius: 4px; }
+  .merge-option span { font-size: 13px; }
+  .merge-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+  .merge-actions button { padding: 8px 16px; border-radius: 6px; font-size: 13px; border: 1px solid #e5e7eb; background: #fff; }
+  .merge-actions button.primary { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+  .stat-num { font-size: 24px; font-weight: 700; color: #3b82f6; }
+  .stat-num small { font-size: 12px; color: #6b7280; font-weight: 400; }
+  .stat-sub { font-size: 11px; color: #6b7280; margin-top: 4px; }
+
+  select { width: 100%; padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; background: #fff; }
+
+  .statusbar {
+    flex: 0 0 44px;
+    padding: 0 24px;
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; color: #6b7280;
+  }
+  .statusbar b { color: #3b82f6; }
+
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: #1f2937; color: #fff;
+    padding: 10px 20px; border-radius: 8px;
+    font-size: 13px;
+    opacity: 0; transition: opacity .3s;
+    z-index: 200;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 1100px) {
+    .main { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+    .side { max-height: 50vh; }
+    .canvas-area { width: 500px; height: 500px; }
+  }
+
+  .new-tag { background: #f0fdf4; color: #16a34a; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-left: 4px; }
+  .mode-indicator { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #eff6ff; color: #3b82f6; margin-left: 8px; }
+  .mode-indicator.pro { background: #fef3c7; color: #92400e; }
+
+
+/* === 补充样式：main.js 依赖元素 === */
+.upload-zone {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%; min-height: 300px;
+  border: 2px dashed #ccc; border-radius: 12px;
+  cursor: pointer; transition: all .2s;
+  background: #fafafa;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: #3b82f6; background: #eff6ff;
+}
+.upload-zone.hidden { display: none !important; }
+.upload-content { text-align: center; }
+.upload-icon { font-size: 48px; margin-bottom: 12px; }
+.upload-content h3 { font-size: 18px; color: #374151; margin-bottom: 6px; }
+.upload-content p { font-size: 13px; color: #9ca3af; }
+
+.param-panel { padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+.param-row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.param-row label { flex: 0 0 48px; color: #6b7280; }
+.param-row input[type=range] { flex: 1; }
+.param-row input[type=checkbox] { width: 14px; height: 14px; }
+.param-row span { flex: 0 0 28px; text-align: right; color: #3b82f6; font-size: 11px; }
+
+.status-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 4px 12px; font-size: 11px; color: #6b7280;
+  background: #f9fafb; border-top: 1px solid #e5e7eb;
+}
+.status-bar b { color: #3b82f6; }
+
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999;
+}
+.modal-content {
+  background: #fff; border-radius: 12px; padding: 20px;
+  max-width: 90vw; max-height: 90vh; overflow-y: auto;
+}
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.modal-header h3 { margin: 0; font-size: 16px; }
+.modal-close { background: none; border: none; font-size: 24px; cursor: pointer; }
+
+.fullscreen-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.9);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 99999;
+}
+.fullscreen-close {
+  position: absolute; top: 16px; right: 16px;
+  background: rgba(255,255,255,.2); border: none; color: #fff;
+  font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+}
+
+.magnifier-window {
+  position: fixed; right: 20px; bottom: 20px;
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.15); z-index: 9998;
+  min-width: 220px;
+}
+.mag-header { padding: 6px 10px; font-size: 12px; color: #6b7280; border-bottom: 1px solid #f3f4f6; }
+.mag-body { padding: 8px; cursor: crosshair; }
+.mag-footer { padding: 4px 10px; font-size: 11px; color: #9ca3af; display: flex; gap: 8px; }
+
+.replace-panel { display: flex; gap: 16px; align-items: flex-start; }
+.replace-arrow { font-size: 24px; color: #9ca3af; padding-top: 30px; }
+.color-chip { padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+.color-preview { width: 48px; height: 48px; border-radius: 6px; border: 1px solid #e5e7eb; margin-top: 4px; }
+.license-form { display: flex; flex-direction: column; gap: 8px; }
+.license-form input { padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; }
+.license-form button { padding: 8px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+.tutorial-content ul { padding-left: 20px; }
+.tutorial-content li { margin: 4px 0; font-size: 13px; color: #374151; }
+
+</style>
 </head>
 <body>
-    <!-- 顶部导航 -->
-    <header class="header">
-        <div class="header-left">
-            <div class="logo">
-                <span class="logo-icon">🧶</span>
-                <div class="logo-text">
-                    <span class="logo-title">PixelBead</span>
-                    <span class="logo-subtitle">像素拼豆工坊</span>
-                </div>
-            </div>
+
+
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="catGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#7dd3fc"/>
+            <stop offset="50%" stop-color="#3b82f6"/>
+            <stop offset="100%" stop-color="#1d4ed8"/>
+          </linearGradient>
+          <linearGradient id="earGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#3b82f6"/>
+            <stop offset="100%" stop-color="#1e40af"/>
+          </linearGradient>
+          <radialGradient id="eyeGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#1e293b"/>
+            <stop offset="100%" stop-color="#0f172a"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="20" cy="38" rx="14" ry="1.5" fill="#1f2937" opacity=".15"/>
+        <path d="M6 16 Q5 5 13 8 L15 18 Z" fill="url(#earGrad)"/>
+        <path d="M8 15 Q7 8 12 10 L14 17 Z" fill="#93c5fd" opacity=".5"/>
+        <path d="M34 16 Q35 5 27 8 L25 18 Z" fill="url(#earGrad)"/>
+        <path d="M32 15 Q33 8 28 10 L26 17 Z" fill="#93c5fd" opacity=".5"/>
+        <path d="M5 20 Q5 10 14 9 L26 9 Q35 10 35 20 L35 30 Q35 38 27 38 L13 38 Q5 38 5 30 Z" fill="url(#catGrad)"/>
+        <ellipse cx="14" cy="14" rx="6" ry="3" fill="#fff" opacity=".2"/>
+        <ellipse cx="14" cy="22" rx="3" ry="3.5" fill="url(#eyeGrad)"/>
+        <ellipse cx="26" cy="22" rx="3" ry="3.5" fill="url(#eyeGrad)"/>
+        <circle cx="15" cy="20" r="1" fill="#fff"/>
+        <circle cx="27" cy="20" r="1" fill="#fff"/>
+        <path d="M20 26 L18 28 L22 28 Z" fill="#f472b6"/>
+        <path d="M17 28 Q20 31 23 28" stroke="#0f172a" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+        <path d="M20 28 L20 30" stroke="#0f172a" stroke-width="1.3" stroke-linecap="round"/>
+        <ellipse cx="9" cy="27" rx="3" ry="2" fill="#fda4af" opacity=".5"/>
+        <ellipse cx="31" cy="27" rx="3" ry="2" fill="#fda4af" opacity=".5"/>
+        <line x1="3" y1="26" x2="9" y2="27" stroke="#475569" stroke-width=".6"/>
+        <line x1="3" y1="29" x2="9" y2="29" stroke="#475569" stroke-width=".6"/>
+        <line x1="37" y1="26" x2="31" y2="27" stroke="#475569" stroke-width=".6"/>
+        <line x1="37" y1="29" x2="31" y2="29" stroke="#475569" stroke-width=".6"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      猫球
+      <small>拼斗底稿生成器</small>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="mode-toggle" style="margin-right: 8px;">
+    <button class="active" data-mode="simple">极简模式</button>
+    <button data-mode="pro">专业全屏</button>
+  </div>
+  <button class="nav-btn">历史记录</button>
+  <button class="nav-btn" onclick="document.getElementById('fileInput').click()">导入</button>
+  <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="importImage(event)">
+  <button class="nav-btn primary" onclick="exportImage()">下载</button>
+
+    <!-- 上传入口（生成前显示） -->
+    <div class="upload-zone" id="uploadZone">
+        <div class="upload-content">
+            <div class="upload-icon">🧵</div>
+            <h3>上传图片开始创作</h3>
+            <p>支持 JPG/PNG/GIF/WebP，点击或拖拽上传</p>
         </div>
-        <div class="header-center">
-            <div class="preset-grid">
-                <button class="preset-btn" onclick="setPresetGrid(16)">16×16</button>
-                <button class="preset-btn" onclick="setPresetGrid(29)">29×29</button>
-                <button class="preset-btn active" onclick="setPresetGrid(52)">52×52</button>
-                <button class="preset-btn" onclick="setPresetGrid(104)">104×104</button>
-            </div>
-            <div class="transform-tools">
-                <button class="nav-btn small" onclick="rotateCanvas(90)" title="顺时针旋转90°">↻90°</button>
-                <button class="nav-btn small" onclick="rotateCanvas(180)" title="旋转180°">↺180°</button>
-                <button class="nav-btn small" onclick="flipCanvas('h')" title="水平镜像">⇄</button>
-                <button class="nav-btn small" onclick="flipCanvas('v')" title="垂直镜像">⇅</button>
-            </div>
-        </div>
-        <div class="header-right">
-            <button class="nav-btn" onclick="saveProject()">💾 保存</button>
-            <button class="nav-btn" onclick="loadProject()">📂 打开</button>
-            <button class="nav-btn" onclick="exportExcel()">📊 物料清单</button>
-            <button class="nav-btn" onclick="showHistory()">📋 历史</button>
-            <button class="nav-btn" onclick="downloadImage()">💾 PNG</button>
-            <button class="nav-btn btn-primary-small" onclick="downloadPDF()">📄 PDF</button>
-        </div>
-    </header>
+    </div>
+</header>
 
-    <main class="main-content">
-        <div class="status-bar" id="statusBar">
-            <span id="cursorPos">坐标: --</span>
-            <span id="hoverColor">颜色: --</span>
-            <span id="statusTip">上传图片开始创作</span>
-        </div>
+<main class="main">
 
-        <div class="content-wrapper">
-            <!-- 左侧：画布区域 -->
-            <div class="left-panel">
-                <div class="upload-zone" id="uploadZone">
-                    <div class="upload-content">
-                        <div class="upload-icon">📤</div>
-                        <h3>点击上传图片</h3>
-                        <p>支持 JPG / PNG / WEBP 格式</p>
-                    </div>
-                    <input type="file" id="fileInput" accept="image/*" hidden>
-                </div>
-                <div class="canvas-editor hidden" id="canvasEditor">
-                    <div class="canvas-wrapper" id="canvasWrapper">
-                        <canvas id="mainCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 右侧：控制面板（草莓拼豆风格模块化布局） -->
-            <aside class="sidebar" id="sidebar">
-                <!-- 卡片 1：工作模式 -->
-                <div class="card">
-                    <div class="card-title">工作模式</div>
-                    <div class="mode-tabs">
-                        <button class="mode-tab active" data-mode="simple" onclick="switchMode('simple')">极简模式</button>
-                        <button class="mode-tab" data-mode="pro" onclick="switchMode('pro')">专业全屏</button>
-                    </div>
-                </div>
-
-                <!-- 卡片 2：参数设置 -->
-                <div class="card">
-                    <div class="card-title">
-                        <span>参数设置</span>
-                        <span class="card-title-extra" id="paramRange">10-500</span>
-                    </div>
-
-                    <div class="param-block">
-                        <div class="param-row">
-                            <label>横向方格尺寸数量 (10-500)</label>
-                            <span class="param-num" id="gridWValue">52</span>
-                        </div>
-                        <input type="range" id="gridW" min="10" max="500" value="52" class="slider">
-                        <div class="param-manual">
-                            <label>手动输入</label>
-                            <input type="number" id="gridWInput" min="10" max="500" value="52" class="manual-input">
-                            <button class="confirm-btn" onclick="confirmGrid('w')">确认</button>
-                        </div>
-                    </div>
-
-                    <div class="param-block">
-                        <div class="param-row">
-                            <label>颜色合并阈值 (0-60)</label>
-                            <span class="param-num" id="thresholdValue">20</span>
-                        </div>
-                        <input type="range" id="threshold" min="0" max="60" value="20" class="slider">
-                        <div class="param-manual">
-                            <label>手动输入</label>
-                            <input type="number" id="thresholdInput" min="0" max="60" value="20" class="manual-input">
-                            <button class="confirm-btn" onclick="confirmGrid('t')">确认</button>
-                        </div>
-                    </div>
-
-                    <div class="param-block">
-                        <div class="param-row">
-                            <label>颜色上限 (1-100)</label>
-                            <span class="param-num" id="colorLimitValue">24</span>
-                        </div>
-                        <input type="range" id="colorLimit" min="2" max="60" value="24" class="slider">
-                        <div class="param-manual">
-                            <label>手动输入</label>
-                            <input type="number" id="colorLimitInput" min="1" max="100" value="24" class="manual-input">
-                            <input type="checkbox" id="limitToggle" checked>
-                            <label for="limitToggle" class="manual-toggle">开启</label>
-                        </div>
-                        <div class="param-hint">未开启时，不限制颜色数量</div>
-                    </div>
-
-                    <div class="param-block no-border">
-                        <div class="param-row">
-                            <label>处理模式</label>
-                        </div>
-                        <select id="processMode" class="param-select">
-                            <option value="cartoon">卡通 (主色)</option>
-                            <option value="photo">照片 (细节优先)</option>
-                            <option value="classic">经典 (通用)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- 卡片 3：工具区 -->
-                <div class="card">
-                    <div class="card-title">
-                        <span>工具</span>
-                        <span class="card-title-extra" id="currentToolLabel">当前：拖拽</span>
-                    </div>
-                    <div class="tool-grid">
-                        <button class="tool-btn active" data-tool="pan" onclick="setTool('pan')">🖐 拖拽</button>
-                        <button class="tool-btn" data-tool="brush" onclick="setTool('brush')">🖌 画笔</button>
-                        <button class="tool-btn" data-tool="picker" onclick="setTool('picker')">💧 取色</button>
-                        <button class="tool-btn" data-tool="undo" onclick="toolAction('undo')">↩ 撤回</button>
-                        <button class="tool-btn" data-tool="fill" onclick="setTool('fill')">🪣 填充</button>
-                        <button class="tool-btn" data-tool="rect" onclick="setTool('rect')">▭ 矩形</button>
-                        <button class="tool-btn" data-tool="mirror" onclick="toolAction('mirror')">⇋ 水平镜像</button>
-                        <button class="tool-btn" data-tool="highlight" onclick="toolAction('highlight')">✨ 颜色高亮</button>
-                        <button class="tool-btn" data-tool="coords" onclick="toolAction('coords')">📍 色号坐标</button>
-                        <button class="tool-btn" data-tool="merge" onclick="toolAction('merge')">🔀 替换杂色</button>
-                        <button class="tool-btn" data-tool="bgremove" onclick="toolAction('bgremove')">🚫 一键去背景</button>
-                        <button class="tool-btn" data-tool="bgmanual" onclick="toolAction('bgmanual')">🧹 手动消除背景</button>
-                        <button class="tool-btn" data-tool="grid" onclick="toolAction('grid')">▦ 网格隐藏</button>
-                        <button class="tool-btn" data-tool="text" onclick="toolAction('text')">𝐓 文字生成</button>
-                    </div>
-
-                    <div class="brush-control">
-                        <div class="param-row">
-                            <label>画笔大小</label>
-                            <span class="param-num" id="brushSizeValue">1</span>
-                        </div>
-                        <input type="range" id="brushSize" min="1" max="10" value="1" class="slider">
-                    </div>
-                </div>
-
-                <!-- 卡片 4：画笔颜色选择 -->
-                <div class="card color-picker-card">
-                    <div class="card-title">画笔颜色选择</div>
-                    <button class="palette-expand-btn" onclick="openPaletteModal()">图片颜色 (<span id="imgColorCount">0</span>) 点击展开完整色板</button>
-                    <div class="palette" id="colorPalette"></div>
-                </div>
-
-                <!-- 卡片 5：去除杂色 -->
-                <div class="card">
-                    <div class="card-title">
-                        <span>去除杂色</span>
-                        <span class="card-title-extra" id="totalBeads2">0颗</span>
-                    </div>
-                    <div class="card-sub">当前共计颜色数量：<span id="colorTotalCount">0</span> 个</div>
-                    <div class="card-sub">总计：<span id="totalBeadsInline">10000</span> 颗</div>
-                    <div class="noise-list" id="colorList">
-                        <p class="color-empty">生成图案后显示颜色清单</p>
-                    </div>
-                </div>
-
-                <!-- 卡片 6：色板与导出 -->
-                <div class="card">
-                    <div class="card-title">
-                        <span>色板与导出</span>
-                        <span class="card-title-extra" id="paletteCount">可用色 24</span>
-                    </div>
-
-                    <div class="chip-label">品牌：</div>
-                    <div class="brand-grid">
-                        <button class="chip active" data-brand="MARD" onclick="setBrand('MARD')">MARD</button>
-                        <button class="chip" data-brand="COCO" onclick="setBrand('COCO')">COCO</button>
-                        <button class="chip" data-brand="ManMan" onclick="setBrand('ManMan')">ManMan</button>
-                        <button class="chip" data-brand="PanPan" onclick="setBrand('PanPan')">PanPan</button>
-                        <button class="chip" data-brand="MiXiaoWo" onclick="setBrand('MiXiaoWo')">MiXiaoWo</button>
-                        <button class="chip" data-brand="MARD_FULL" onclick="setBrand('MARD_FULL')">MARD 220色</button>
-                        <button class="chip" data-brand="Perler" onclick="setBrand('Perler')">Perler</button>
-                        <button class="chip" data-brand="Hama" onclick="setBrand('Hama')">Hama</button>
-                        <button class="chip" data-brand="Artkal" onclick="setBrand('Artkal')">Artkal</button>
-                    </div>
-
-                    <div class="chip-label">色号：</div>
-                    <div class="color-mode-grid">
-                        <button class="chip small active" data-count="24" onclick="setColorCount(24)">24色</button>
-                        <button class="chip small" data-count="48" onclick="setColorCount(48)">48色</button>
-                        <button class="chip small" data-count="72" onclick="setColorCount(72)">72色</button>
-                        <button class="chip small" data-count="96" onclick="setColorCount(96)">96色</button>
-                        <button class="chip small" data-count="144" onclick="setColorCount(144)">144色</button>
-                        <button class="chip small" data-count="221" onclick="setColorCount(221)">221色</button>
-                        <button class="chip small" data-count="291" onclick="setColorCount(291)">291色</button>
-                    </div>
-
-                    <button class="btn-outline" onclick="openPaletteModal()">色板管理</button>
-                    <button class="btn-primary btn-block" onclick="downloadPattern()">下载图纸</button>
-                </div>
-
-            </aside>
-
-            <!-- 临时占位（被上面卡片替换掉的当前颜色/色块） -->
-            <div style="display:none">
-                <div class="current-color">
-                    <div class="color-preview" id="currentColorPreview" style="background:#2d3436"></div>
-                        <div class="color-info">
-                            <span class="color-code" id="currentColorCode">#2D3436</span>
-                            <span class="color-name" id="currentColorName">黑色</span>
-                        </div>
-                    </div>
-                    <div class="color-palette" id="colorPalette"></div>
-                    <div class="palette-hint">🖱️ 滚轮 / 🤏 双指缩放色块大小 （<span id="paletteSizeTip">28px</span>）</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 底部工具栏（画布正下方） -->
-        <div class="toolbar-area hidden" id="toolbarArea">
-            <div class="tool-group">
-                <button class="tool-btn active" id="toolBrush" onclick="selectTool('brush')" title="像素画笔"><span class="tool-icon">✏️</span><span class="tool-label">画笔</span></button>
-                <button class="tool-btn" id="toolEraser" onclick="selectTool('eraser')" title="橡皮擦"><span class="tool-icon">🧹</span><span class="tool-label">橡皮</span></button>
-                <button class="tool-btn" id="toolPicker" onclick="selectTool('picker')" title="取色器"><span class="tool-icon">💉</span><span class="tool-label">取色</span></button>
-                <button class="tool-btn" id="toolFill" onclick="selectTool('fill')" title="填充"><span class="tool-icon">🪣</span><span class="tool-label">填充</span></button>
-                <button class="tool-btn" id="toolWand" onclick="selectTool('wand')" title="魔棒"><span class="tool-icon">🪄</span><span class="tool-label">魔棒</span></button>
-                <button class="tool-btn" id="toolSelect" onclick="selectTool('select')" title="框选"><span class="tool-icon">⬚</span><span class="tool-label">框选</span></button>
-            </div>
-            <div class="tool-divider-v"></div>
-            <div class="tool-group">
-                <button class="tool-btn" onclick="undo()" title="撤销"><span class="tool-icon">↩️</span><span class="tool-label">撤销</span></button>
-                <button class="tool-btn" onclick="redo()" title="重做"><span class="tool-icon">↪️</span><span class="tool-label">重做</span></button>
-            </div>
-            <div class="tool-divider-v"></div>
-            <div class="tool-group">
-                <button class="tool-btn" onclick="toggleGridLines()" id="btnGrid"><span class="tool-icon">#</span><span class="tool-label">网格</span></button>
-                <button class="tool-btn" onclick="toggleColorCode()" id="btnColorCode"><span class="tool-icon">A1</span><span class="tool-label">色号</span></button>
-                <button class="tool-btn" onclick="toggleNumbers()" id="btnNumbers"><span class="tool-icon">123</span><span class="tool-label">编号</span></button>
-                <button class="tool-btn" onclick="toggleFullscreen()" title="全屏"><span class="tool-icon">⛶</span><span class="tool-label">全屏</span></button>
-            </div>
-            <div class="tool-divider-v"></div>
-            <div class="tool-group zoom-group">
-                <button class="tool-btn" onclick="zoomCanvasIn()"><span class="tool-icon">🔍+</span><span class="tool-label">放大</span></button>
-                <button class="tool-btn" onclick="zoomCanvasOut()"><span class="tool-icon">🔍-</span><span class="tool-label">缩小</span></button>
-                <button class="tool-btn" onclick="zoomCanvasFit()"><span class="tool-icon">⊡</span><span class="tool-label">适应</span></button>
-                <button class="tool-btn active" onclick="toggleBeadNumbers()" id="btnBeadNums"><span class="tool-icon">#N</span><span class="tool-label">豆号</span></button>
-            </div>
-        </div>
-    </main>
-
-    <!-- 局部放大镜窗口 -->
-    <div class="magnifier-window hidden" id="magnifierWindow">
-        <div class="magnifier-header">
-            <span class="magnifier-title">🔍 局部放大镜</span>
-            <div class="magnifier-zoom-btns">
-                <button class="mag-zoom-btn" onclick="setMagZoom(2)">2x</button>
-                <button class="mag-zoom-btn active" onclick="setMagZoom(4)">4x</button>
-                <button class="mag-zoom-btn" onclick="setMagZoom(8)">8x</button>
-                <button class="mag-zoom-btn" onclick="setMagZoom(16)">16x</button>
-            </div>
-            <button class="mag-close" onclick="toggleMagnifier()">✕</button>
-        </div>
-        <div class="magnifier-body" id="magBody"><canvas id="magCanvas" width="256" height="256"></canvas></div>
-        <div class="magnifier-coord" id="magCoord">网格坐标: --</div>
-        <div class="magnifier-hint">移动鼠标查看细节</div>
+  <section class="canvas-wrap">
+    <div class="canvas-toolbar">
+      <div class="canvas-tool-group">
+        <button class="canvas-tool active" data-tool="brush" title="画笔 B">✎</button>
+        <button class="canvas-tool" data-tool="eraser" title="橡皮 E">⌫</button>
+        <button class="canvas-tool" data-tool="rect" title="矩形 R">▢</button>
+        <button class="canvas-tool" data-tool="picker" title="吸管 I">⌖</button>
+        <button class="canvas-tool" data-tool="fill" title="填充 G">▣</button>
+      </div>
+      <div class="canvas-tool-group">
+        <button class="canvas-tool" onclick="undo()" title="撤销 Ctrl+Z">↶</button>
+        <button class="canvas-tool" onclick="redo()" title="重做 Ctrl+Y">↷</button>
+      </div>
+      <div class="canvas-tool-group">
+        <button class="canvas-tool" data-tool="drag" title="拖拽移动 (按住空格)">🖱</button>
+      </div>
+      <div class="canvas-tool-group">
+        <button class="canvas-tool active" data-toggle="grid" title="显示网格">▦</button>
+        <button class="canvas-tool active" data-toggle="coords" title="显示坐标">#</button>
+        <button class="canvas-tool" data-toggle="original" title="显示原图">🖼</button>
+      </div>
+      <div class="canvas-tool-info" id="toolInfo">
+        当前: <b>画笔</b> · 颜色: <b>H07 黑</b> · 笔刷: <b>1</b> 格 · 缩放 <b>100%</b>
+      </div>
     </div>
 
-    <!-- 教程弹窗 -->
-    <div class="modal-overlay hidden" id="tutorialModal">
-        <div class="modal modal-large">
-            <div class="modal-header"><h2>📖 使用教程</h2><button class="modal-close" onclick="closeTutorial()">✕</button></div>
-            <div class="modal-body tutorial-body">
-                <div class="tutorial-step"><div class="step-num">1</div><div class="step-content"><h3>上传图片</h3><p>点击上传区域选择 JPG/PNG/WEBP 图片。</p></div></div>
-                <div class="tutorial-step"><div class="step-num">2</div><div class="step-content"><h3>设置参数</h3><p>选择品牌和颜色数量。</p></div></div>
-                <div class="tutorial-step"><div class="step-num">3</div><div class="step-content"><h3>一键生成</h3><p>点击「一键高清生成」。</p></div></div>
-                <div class="tutorial-step"><div class="step-num">4</div><div class="step-content"><h3>导出</h3><p>点击 PNG 或 PDF 下载。</p></div></div>
-            </div>
+    <div class="canvas-head">
+      <div class="canvas-meta">
+        横竖尺寸 <b id="gridSizeLabel">50 × 50</b> · 网格：实线
+      </div>
+      <div class="canvas-meta">
+        📍 坐标 <b id="coordLabel">(0, 0)</b>　
+        <span id="modeIndicator" class="mode-indicator">极简模式</span>
+      </div>
+    </div>
+
+    <div class="canvas-viewport" id="canvasViewport">
+      <div class="canvas-content" id="canvasContent">
+        <div class="canvas-area" id="canvasArea">
+          <div class="coords-top" id="coordsTop">
+            <span>1</span><span>11</span><span>21</span><span>31</span><span>41</span><span>51</span><span>61</span><span>71</span><span>81</span>
+          </div>
+          <div class="coords-left" id="coordsLeft">
+            <span>1</span><span>11</span><span>21</span><span>31</span><span>41</span><span>51</span><span>61</span><span>71</span><span>81</span>
+          </div>
+          <div class="canvas-grid" id="grid"></div>
+          <div class="label-tag" id="labelTag" style="left: 48%; top: 30%; display: none;">H07</div>
+        </div>
+      </div>
+      <div class="zoom-hint" id="zoomHint">滚轮缩放 · 拖拽移动 · 双指缩放</div>
+    </div>
+  
+    <!-- main.js 需要的 canvas 元素 -->
+    <canvas id="mainCanvas" style="display:none;"></canvas>
+    <canvas id="magCanvas" style="display:none;"></canvas>
+    <canvas id="fullscreenCanvas" style="display:none;"></canvas>
+</section>
+
+  <aside class="side">
+
+    
+    <!-- 参数面板（main.js 使用 gridW/gridH/brightness/contrast/saturation） -->
+    <div class="param-panel" id="paramPanel" style="display:none;">
+        <div class="param-row">
+            <label>宽度</label>
+            <input type="range" id="gridW" min="10" max="120" value="52">
+            <span id="gridWValue">52</span>
+        </div>
+        <div class="param-row">
+            <label>高度</label>
+            <input type="range" id="gridH" min="10" max="120" value="52">
+            <span id="gridHValue">52</span>
+        </div>
+        <div class="param-row">
+            <label>亮度</label>
+            <input type="range" id="brightness" min="50" max="150" value="100">
+        </div>
+        <div class="param-row">
+            <label>对比度</label>
+            <input type="range" id="contrast" min="50" max="150" value="100">
+        </div>
+        <div class="param-row">
+            <label>饱和度</label>
+            <input type="range" id="saturation" min="0" max="200" value="100">
+        </div>
+        <div class="param-row">
+            <label>去杂色</label>
+            <input type="checkbox" id="noiseReduction" checked>
+        </div>
+        <div class="param-row">
+            <label>保留白色</label>
+            <input type="checkbox" id="keepWhite" checked>
+        </div>
+        <div class="param-row">
+            <label>锁定比例</label>
+            <input type="checkbox" id="lockRatio" checked>
+        </div>
+        <div class="param-row">
+            <label>颜色上限</label>
+            <input type="range" id="colorLimit" min="1" max="100" value="24">
+            <span id="colorLimitValue">24</span>
         </div>
     </div>
 
-    <!-- 历史记录 -->
-    <div class="modal-overlay hidden" id="historyModal">
-        <div class="modal">
-            <div class="modal-header"><h2>📋 历史记录</h2><button class="modal-close" onclick="closeHistory()">✕</button></div>
-            <div class="modal-body"><div class="history-list" id="historyList"><p class="history-empty">暂无历史记录</p></div></div>
+<div class="card" id="card-params">
+      <h3>参数设置 <button class="toggle" onclick="toggleCard('card-params')">▼ 收起</button></h3>
+      <div class="param-row">
+        <div class="label-line"><label>横向方格尺寸数量</label><span class="val" id="gridXVal">50</span></div>
+        <input type="range" min="10" max="100" value="50" id="gridXSlider" oninput="updateGridSize()">
+        <div class="manual">手动输入 <input type="number" value="50" id="gridXInput" oninput="updateGridSize()"> <button onclick="updateGridSize()">确认</button></div>
+      </div>
+      <div class="param-row">
+        <div class="label-line"><label>纵向方格尺寸数量</label><span class="val" id="gridYVal">50</span></div>
+        <input type="range" min="10" max="100" value="50" id="gridYSlider" oninput="updateGridSize()">
+        <div class="manual">手动输入 <input type="number" value="50" id="gridYInput" oninput="updateGridSize()"> <button onclick="updateGridSize()">确认</button></div>
+      </div>
+      <div class="param-row">
+        <div class="label-line"><label>颜色合并阈值</label><span class="val" id="thresholdVal">30</span></div>
+        <input type="range" min="0" max="60" value="30" id="thresholdSlider" oninput="updateThreshold()">
+        <div class="manual">手动输入 <input type="number" value="30" id="thresholdInput" oninput="updateThreshold()"> <button onclick="updateThreshold()">确认</button></div>
+      </div>
+      <div class="param-row">
+        <div class="label-line"><label>颜色上限</label><span class="val off" id="colorLimitVal">不限</span></div>
+        <input type="range" min="1" max="100" value="100" id="colorLimitSlider" disabled oninput="updateColorLimit()">
+        <div class="manual">手动输入 <input type="number" placeholder="不限" id="colorLimitInput" disabled> <button style="background:#f3f4f6;border-color:#e5e7eb;color:#6b7280;" onclick="toggleColorLimit()">开启</button> <span id="colorLimitStatus" style="font-size:11px;">未开启</span></div>
+      </div>
+      <div class="param-row">
+        <div class="label-line"><label>处理模式</label></div>
+        <select>
+          <option>卡通 (主色)</option>
+          <option>真实还原</option>
+          <option>灰阶</option>
+          <option>复古低饱和</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card" id="card-tools">
+      <h3>工具 <span class="hint">当前: <b id="currentToolName">画笔</b></span> <button class="toggle" onclick="toggleCard('card-tools')">▼ 收起</button></h3>
+      <div class="tools-grid">
+        <button class="tool-btn" data-action="drag">拖拽</button>
+        <button class="tool-btn" data-action="brush">画笔</button>
+        <button class="tool-btn" data-action="picker">取色</button>
+        <button class="tool-btn" data-action="undo">撤回</button>
+        <button class="tool-btn" data-action="fill">填充</button>
+        <button class="tool-btn" data-action="rect">矩形</button>
+        <button class="tool-btn" data-action="mirror">水平镜像</button>
+        <button class="tool-btn" data-action="highlight">颜色高亮</button>
+        <button class="tool-btn" data-action="coord">色号坐标</button>
+        <button class="tool-btn" data-action="replace">替换杂色</button>
+        <button class="tool-btn" data-action="bg-auto">一键去背景</button>
+        <button class="tool-btn" data-action="bg-manual">手动消除背景</button>
+        <button class="tool-btn" data-action="grid-toggle">网格隐藏</button>
+        <button class="tool-btn" data-action="text">文字生成</button>
+      </div>
+      <div class="brush-size">
+        <label>画笔大小</label>
+        <div class="brush-size-row">
+          <input type="range" min="1" max="20" value="1" id="brushSizeSlider" oninput="updateBrushSize()">
+          <span class="brush-size-val" id="brushSizeVal">1</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="card-color">
+      <h3>项目色板 <button class="toggle" onclick="toggleCard('card-color')">▼ 收起</button></h3>
+      <div class="color-palette-section">
+        <div class="current-color-row">
+          <div class="dot" id="currentColorDot" style="background:#000"></div>
+          <span>当前: <b id="currentColorName">H07 黑色</b></span>
+        </div>
+        <div class="palette-tabs">
+          <span class="palette-tab active">COCO</span>
+          <span class="palette-tab">MARD</span>
+          <span class="palette-tab">MANMAN</span>
+          <span class="palette-tab">PANPAN</span>
+          <span class="palette-tab">MiXiaoWo</span>
+          <span class="palette-tab">自定义</span>
+        </div>
+        <div class="project-colors" id="projectColors"></div>
+      </div>
+    </div>
+
+    <div class="card" id="card-impurity">
+      <h3>去除杂色 <span class="hint"><span id="mergedCount">0</span> 已合并</span> <button class="toggle" onclick="toggleCard('card-impurity')">▼ 收起</button></h3>
+      <div class="impurity-header">
+        <div>
+          <h4>去除杂色</h4>
+          <p>当前共计颜色数量: <b id="impurityTotal">16</b> 个 · 总计: 10,000 颗</p>
+        </div>
+        <button class="undo-all-btn" id="undoAllBtn" onclick="undoAllMerge()" disabled>↶ 一键撤回</button>
+      </div>
+      <div class="impurity-list" id="impurityList"></div>
+    </div>
+
+  </aside>
+
+</main>
+
+
+    <!-- 状态栏（main.js 需要的统计元素） -->
+    <div class="status-bar" id="statusBar" style="display:none;">
+        <span id="statusTip">生成完成！打开放大镜精细微调</span>
+        <span id="statusCoord">(0, 0)</span>
+        <span id="statusZoom">100%</span>
+    </div>
+<footer class="statusbar">
+  <div>当前 <b id="statusTool">画笔</b> · 颜色 <b id="statusColor">H07 黑</b> · 笔刷 <b id="statusBrush">1</b> 格</div>
+  <div>坐标 <b id="statusCoord">(0, 0)</b> · 缩放 <b id="statusZoom">100%</b> · <span id="modeStatus">极简模式</span></div>
+</footer>
+
+<div class="merge-modal" id="mergeModal">
+  <div class="merge-modal-content">
+    <h3>合并颜色</h3>
+    <p>选择将 <b id="mergeFrom"></b> 合并到哪个颜色？</p>
+    <div class="merge-options" id="mergeOptions"></div>
+    <div class="merge-actions">
+      <button onclick="closeMergeModal()">取消</button>
+      <button class="primary" onclick="confirmMerge()">确认合并</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+
+
+<!-- 编辑器 UI 交互 + 裁剪初始化 -->
+
+<!-- 裁剪弹窗 -->
+<div 
+    <!-- main.js 弹窗 -->
+    <div class="modal-overlay" id="paletteModal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>选择颜色</h3>
+                <button class="modal-close" onclick="closePaletteModal()">×</button>
+            </div>
+            <input type="text" id="paletteSearchInput" placeholder="搜索颜色...">
+            <div id="paletteGridContainer"></div>
         </div>
     </div>
 
-    <!-- 全屏预览 -->
-    <div class="fullscreen-overlay hidden" id="fullscreenOverlay">
-        <button class="fullscreen-close" onclick="toggleFullscreen()">✕</button>
-        <canvas id="fullscreenCanvas"></canvas>
+    <div class="modal-overlay" id="excelModal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>导出物料清单</h3>
+                <button class="modal-close" onclick="closeExcelModal()">×</button>
+            </div>
+            <div id="excelContent"></div>
+        </div>
     </div>
 
-    <!-- 替换颜色弹窗 -->
-    <div class="modal-overlay hidden" id="replaceColorModal">
-        <div class="modal modal-small">
-            <div class="modal-header"><h2>🪄 批量替换颜色</h2><button class="modal-close" onclick="closeReplaceModal()">✕</button></div>
-            <div class="modal-body">
-                <p style="margin-bottom:12px">将 <strong id="fromColorPreview" style="display:inline-block;width:20px;height:20px;vertical-align:middle;border-radius:4px"></strong> <span id="fromColorInfo">颜色A</span> 替换为：</p>
-                <div class="current-color" style="margin-bottom:12px">
-                    <div class="color-preview" id="replaceToPreview" style="background:#2d3436"></div>
-                    <div class="color-info"><span class="color-code" id="replaceToCode">#2D3436</span><span class="color-name" id="replaceToName">黑色</span></div>
-                </div>
-                <div class="color-palette compact" id="replacePalette" style="max-height:200px;overflow-y:auto"></div>
-                <button class="btn-generate" style="margin-top:12px;width:100%" onclick="confirmReplaceColor()">✅ 确认替换</button>
+    <div class="modal-overlay" id="historyModal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>历史记录</h3>
+                <button class="modal-close" onclick="closeHistoryModal()">×</button>
+            </div>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="tutorialModal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>教程</h3>
+                <button class="modal-close" onclick="closeTutorialModal()">×</button>
+            </div>
+            <div class="tutorial-content">
+                <p>快捷键：</p>
+                <ul>
+                    <li><b>B</b> - 画笔</li>
+                    <li><b>E</b> - 橡皮</li>
+                    <li><b>I</b> - 取色</li>
+                    <li><b>R</b> - 矩形</li>
+                    <li><b>G</b> - 填充</li>
+                    <li><b>空格</b> - 拖拽</li>
+                    <li><b>Ctrl+Z</b> - 撤销</li>
+                    <li><b>Ctrl+Y</b> - 重做</li>
+                    <li><b>Ctrl+O</b> - 打开图片</li>
+                </ul>
             </div>
         </div>
     </div>
 
-    <!-- 物料清单弹窗 -->
-    <div class="modal-overlay hidden" id="excelModal">
-        <div class="modal"><div class="modal-header"><h2>📊 物料清单</h2><button class="modal-close" onclick="closeExcelModal()">✕</button></div>
-            <div class="modal-body" id="excelContent"></div>
+    <div class="modal-overlay" id="licenseModal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>验证授权</h3>
+                <button class="modal-close" onclick="closeLicenseModal()">×</button>
+            </div>
+            <div class="license-form">
+                <input type="text" id="phone" placeholder="手机号（仅验证用）">
+                <input type="text" id="license" placeholder="输入卡密">
+                <button id="verifyBtn">验证</button>
+                <p id="verifyMessage"></p>
+            </div>
         </div>
     </div>
 
-    <!-- 卡密验证弹窗 -->
-    <div class="modal-overlay hidden" id="licenseModal">
-        <div class="modal">
-            <div class="modal-header"><h2>🧶 卡密验证</h2><button class="modal-close" onclick="closeLicenseModal()">✕</button></div>
-            <div class="modal-body">
-                <div class="form-group"><label for="phone">手机号</label><input type="tel" id="phone" placeholder="请输入11位手机号" maxlength="11"></div>
-                <div class="form-group"><label for="license">卡密</label><input type="text" id="license" placeholder="请输入10位卡密" maxlength="10"></div>
-                <button id="verifyBtn" class="btn-verify" onclick="verifyLicense()">验证卡密</button>
-                <div id="message" class="message"></div>
-                <div class="contact-section">
-                    <p>没有卡密？联系客服：</p>
-                    <p>📱 微信：<strong>kaxill</strong></p>
-                    <p>📧 邮箱：<strong>617171856@qq.com</strong></p>
+    <div class="modal-overlay" id="replaceColorModal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>替换颜色</h3>
+                <button class="modal-close" onclick="closeReplaceModal()">×</button>
+            </div>
+            <div class="replace-panel">
+                <div class="replace-from">
+                    <p>从：</p>
+                    <div id="replaceFromCode" class="color-chip"></div>
+                    <div id="replaceFromName"></div>
+                    <div id="replaceFromPreview" class="color-preview"></div>
+                </div>
+                <div class="replace-arrow">→</div>
+                <div class="replace-to">
+                    <p>到：</p>
+                    <input type="text" id="replaceToCode" placeholder="色号">
+                    <input type="text" id="replaceToName" placeholder="颜色名">
+                    <div id="replaceToPreview" class="color-preview"></div>
+                    <button class="btn-primary" onclick="confirmReplaceColor()">确认</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="main.js"></script>
+    <div class="modal-overlay" id="replacePalette" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>色板管理</h3>
+                <button class="modal-close" onclick="closeReplacePalette()">×</button>
+            </div>
+            <div id="proColorPalette"></div>
+        </div>
+    </div>
+
+    <!-- 全屏叠加层 -->
+    <div class="fullscreen-overlay" id="fullscreenOverlay" style="display:none;">
+        <canvas id="fullscreenCanvas2"></canvas>
+        <button class="fullscreen-close" onclick="closeFullscreen()">×</button>
+    </div>
+
+    <!-- 放大镜窗口 -->
+    <div class="magnifier-window" id="magnifierWindow" style="display:none;">
+        <div class="mag-header" id="magHeader">放大镜 <span id="magCoord"></span></div>
+        <div class="mag-body" id="magBody">
+            <canvas id="magCanvas"></canvas>
+        </div>
+        <div class="mag-footer">
+            <span id="hoverColor"></span>
+            <span id="cursorPos"></span>
+        </div>
+    </div>
+
+
+<!-- === main.js compatibility layer (hidden) === -->
+  <button id="btnBeadNums" style="display:none"></button>
+  <button id="btnColorCode" style="display:none"></button>
+  <button id="btnGrid" style="display:none"></button>
+  <button id="btnNumbers" style="display:none"></button>
+  <div id="canvasEditor"></div>
+  <div id="canvasWrapper"></div>
+  <div id="colorList"></div>
+  <div id="colorPalette"></div>
+  <span id="currentColorCode"></span>
+  <span id="currentColorPreview"></span>
+  <span id="fromColorInfo" style="display:none"></span>
+  <span id="fromColorPreview" style="display:none"></span>
+  <div id="message" style="display:none"></div>
+  <aside id="sidebar"></aside>
+  <span id="statBeads"></span>
+  <span id="statBlank"></span>
+  <span id="statColors"></span>
+  <span id="statSize"></span>
+  <div id="toolbarArea"></div>
+  <span id="totalBeads"></span>
+  <span id="totalBeads2"></span>
+<!-- === end compatibility layer === -->
+id="cropModal" class="modal-overlay crop-modal-wrap" style="display:none;">
+    <div class="modal-content crop-modal-content">
+        <div class="modal-header">
+            <div>
+                <h3 class="crop-title">裁剪图片</h3>
+                <p class="crop-subtitle">请尽量大可能主体居中正方形裁剪，效果最好！</p>
+            </div>
+            <button class="modal-close" id="cropCloseBtn" title="取消">×</button>
+        </div>
+        <div class="crop-body">
+            <div class="crop-preview-area">
+                <div class="crop-preview-inner" id="cropPreviewInner">
+                    <img id="cropImgEl" class="crop-img" alt="" draggable="false" />
+                    <div class="crop-mask crop-mask-top"    id="cropMaskTop"></div>
+                    <div class="crop-mask crop-mask-bottom" id="cropMaskBottom"></div>
+                    <div class="crop-mask crop-mask-left"  id="cropMaskLeft"></div>
+                    <div class="crop-mask crop-mask-right" id="cropMaskRight"></div>
+                    <div class="crop-frame" id="cropFrame">
+                        <span class="crop-handle crop-h-nw" data-handle="nw"></span>
+                        <span class="crop-handle crop-h-ne" data-handle="ne"></span>
+                        <span class="crop-handle crop-h-sw" data-handle="sw"></span>
+                        <span class="crop-handle crop-h-se" data-handle="se"></span>
+                        <span class="crop-handle crop-h-n"  data-handle="n"></span>
+                        <span class="crop-handle crop-h-s"  data-handle="s"></span>
+                        <span class="crop-handle crop-h-e"  data-handle="e"></span>
+                        <span class="crop-handle crop-h-w"  data-handle="w"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="crop-controls">
+                <div class="crop-control-group">
+                    <label>原图缩放</label>
+                    <div class="crop-slider-row">
+                        <input type="range" id="cropScaleSlider" min="50" max="200" value="100">
+                        <span id="cropScaleValue">100%</span>
+                    </div>
+                </div>
+                <div class="crop-control-group">
+                    <label>裁剪框大小</label>
+                    <div class="crop-slider-row">
+                        <input type="range" id="cropSizeSlider" min="50" max="100" value="100">
+                        <span id="cropSizeValue">100%</span>
+                    </div>
+                </div>
+                <div class="crop-control-group crop-row-btns">
+                    <button class="btn-secondary" id="cropResetBtn">重置</button>
+                    <button class="btn-secondary" id="cropCenterBtn">居中对齐</button>
+                </div>
+                <p class="crop-tip">💡 拖动白框移动位置，拖动角点/边调整大小</p>
+            </div>
+        </div>
+        <div class="modal-footer crop-footer">
+            <button class="btn-secondary" id="cropCancelBtn">取消</button>
+            <button class="btn-secondary" id="cropSkipBtn">原图生成</button>
+            <button class="btn-primary"   id="cropConfirmBtn">确认裁剪</button>
+        </div>
+    </div>
+</div>
+
+<script src="main.js"></script>
+<script>
+
+
+// ========== 裁剪弹窗 ==========
+function importImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => { window._cropSourceImg = img; initCropModal(img); };
+        img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+let _cropImg=null, _cropScale=1, _cropFrameX=0, _cropFrameY=0, _cropFrameW=100, _cropFrameH=100;
+let _isDrag=false, _dragMode=null, _dragStart={x:0,y:0}, _dragStartF={x:0,y:0,w:0,h:0};
+
+function initCropModal(img) {
+    _cropImg = img;
+    const el = document.getElementById('cropImgEl');
+    if (!el) return;
+    el.src = img.src;
+    el.onload = () => {
+        const W=400, H=400;
+        const s = Math.min(W/img.width, H/img.height);
+        const rw=img.width*s, rh=img.height*s;
+        el.style.cssText = `width:${rw}px;height:${rh}px;left:${(W-rw)/2}px;top:${(H-rh)/2}px`;
+        _cropScale = s;
+        const side = Math.min(img.width,img.height)*0.8;
+        _cropFrameW=side; _cropFrameH=side; _cropFrameX=(img.width-side)/2; _cropFrameY=(img.height-side)/2;
+        document.getElementById('cropScaleSlider').value=100;
+        document.getElementById('cropScaleValue').textContent='100%';
+        document.getElementById('cropSizeSlider').value=100;
+        document.getElementById('cropSizeValue').textContent='100%';
+        drawCropFrame();
+        document.getElementById('cropModal').style.display='flex';
+    };
+    if(img.complete && img.naturalWidth>0) el.onload();
+}
+
+function drawCropFrame() {
+    if(!_cropImg) return;
+    const el=document.getElementById('cropFrame'); if(!el) return;
+    const W=400,H=400, s=_cropScale;
+    const ix=parseFloat(document.getElementById('cropImgEl').style.left||'0');
+    const iy=parseFloat(document.getElementById('cropImgEl').style.top||'0');
+    const fx=ix+_cropFrameX*s, fy=iy+_cropFrameY*s, fw=_cropFrameW*s, fh=_cropFrameH*s;
+    el.style.cssText=`left:${fx}px;top:${fy}px;width:${fw}px;height:${fh}px`;
+    const upd=(id,l,t,w,h)=>{const m=document.getElementById(id);if(m)m.style.cssText=`left:${l}px;top:${t}px;width:${w}px;height:${h}px`;};
+    upd('cropMaskTop',0,0,W,fy);
+    upd('cropMaskBottom',0,fy+fh,W,H-fy-fh);
+    upd('cropMaskLeft',0,fy,fx,fh);
+    upd('cropMaskRight',fx+fw,fy,W-fx-fw,fh);
+}
+
+function _cmDown(e) {
+    e.preventDefault(); e.stopPropagation();
+    _isDrag=true; _dragMode=e.target.dataset.handle||'move';
+    const r=document.getElementById('cropPreviewInner').getBoundingClientRect();
+    const cx=e.touches?e.touches[0].clientX:e.clientX;
+    const cy=e.touches?e.touches[0].clientY:e.clientY;
+    _dragStart={x:cx-r.left,y:cy-r.top};
+    _dragStartF={x:_cropFrameX,y:_cropFrameY,w:_cropFrameW,h:_cropFrameH};
+}
+function _cmMove(e) {
+    if(!_isDrag||!_cropImg)return; e.preventDefault();
+    const r=document.getElementById('cropPreviewInner').getBoundingClientRect();
+    const cx=e.touches?e.touches[0].clientX:e.clientX;
+    const cy=e.touches?e.touches[0].clientY:e.clientY;
+    const dx=(cx-r.left-_dragStart.x)/_cropScale;
+    const dy=(cy-r.top-_dragStart.y)/_cropScale;
+    let {x,y,w,h}=_dragStartF;
+    const mS=20,iW=_cropImg.width,iH=_cropImg.height;
+    if(_dragMode==='move'){
+        x=Math.max(0,Math.min(x+dx,iW-w)); y=Math.max(0,Math.min(y+dy,iH-h));
+    } else {
+        let ts=w; const mp={se:w+dx,sw:w-dx,ne:w+dx,nw:w-dx,e:w+dx,w:w-dx,s:h+dy,n:h-dy};
+        ts=Math.max(mS,mp[_dragMode]||w);
+        const cx0=x+w/2,cy0=y+h/2; x=cx0-ts/2; y=cy0-ts/2;
+        x=Math.max(0,Math.min(x,iW-ts)); y=Math.max(0,Math.min(y,iH-ts));
+        const ts2=Math.min(ts,iW-x,iH-y); x=Math.max(0,Math.min(x,iW-ts2)); y=Math.max(0,Math.min(y,iH-ts2));
+        w=ts2; h=ts2;
+    }
+    _cropFrameX=x; _cropFrameY=y; _cropFrameW=w; _cropFrameH=h; drawCropFrame();
+}
+function _cmUp(){_isDrag=false;}
+document.addEventListener('mousemove',_cmMove);
+document.addEventListener('touchmove',_cmMove,{passive:false});
+document.addEventListener('mouseup',_cmUp);
+document.addEventListener('touchend',_cmUp);
+
+// cropModal 按钮
+document.getElementById('cropCloseBtn')?.addEventListener('click',()=>document.getElementById('cropModal').style.display='none');
+document.getElementById('cropCancelBtn')?.addEventListener('click',()=>document.getElementById('cropModal').style.display='none');
+document.getElementById('cropResetBtn')?.addEventListener('click',()=>{
+    if(!_cropImg)return; const s=Math.min(_cropImg.width,_cropImg.height)*0.8;
+    _cropFrameW=s;_cropFrameH=s;_cropFrameX=(_cropImg.width-s)/2;_cropFrameY=(_cropImg.height-s)/2; drawCropFrame();
+});
+document.getElementById('cropCenterBtn')?.addEventListener('click',()=>{
+    if(!_cropImg)return; _cropFrameX=(_cropImg.width-_cropFrameW)/2;_cropFrameY=(_cropImg.height-_cropFrameH)/2; drawCropFrame();
+});
+document.getElementById('cropScaleSlider')?.addEventListener('input',function(){
+    const v=parseInt(this.value); document.getElementById('cropScaleValue').textContent=v+'%';
+    if(!_cropImg)return;
+    const base=Math.min(400/_cropImg.width,400/_cropImg.height);
+    _cropScale=base*(v/100);
+    const el=document.getElementById('cropImgEl');
+    el.style.width=(_cropImg.width*_cropScale)+'px'; el.style.height=(_cropImg.height*_cropScale)+'px';
+    el.style.left=((400-_cropImg.width*_cropScale)/2)+'px'; el.style.top=((400-_cropImg.height*_cropScale)/2)+'px';
+    drawCropFrame();
+});
+document.getElementById('cropSizeSlider')?.addEventListener('input',function(){
+    const v=parseInt(this.value); document.getElementById('cropSizeValue').textContent=v+'%';
+    if(!_cropImg)return;
+    const side=Math.min(_cropImg.width,_cropImg.height)*(v/100);
+    _cropFrameW=side;_cropFrameH=side;_cropFrameX=(_cropImg.width-side)/2;_cropFrameY=(_cropImg.height-side)/2; drawCropFrame();
+});
+document.getElementById('cropSkipBtn')?.addEventListener('click',()=>{
+    document.getElementById('cropModal').style.display='none';
+    if(window._cropSourceImg){
+        currentImage=window._cropSourceImg; beadData=null;
+        const uploadZone = document.getElementById('uploadZone');
+        const canvasEditor = document.getElementById('canvasEditor') || document.querySelector('.editor-main');
+        if(uploadZone) uploadZone.style.display='none';
+        if(canvasEditor) canvasEditor.style.display='flex';
+        document.getElementById('statusBar').style.display='flex';
+        document.getElementById('paramPanel').style.display='block';
+        showToast('原图已载入，正在生成...'); setTimeout(()=>generatePerlerBeads(),200);
+    }
+});
+document.getElementById('cropConfirmBtn')?.addEventListener('click',()=>{
+    if(!_cropImg)return;
+    const tc=document.createElement('canvas');
+    tc.width=Math.round(_cropFrameW); tc.height=Math.round(_cropFrameH);
+    const tx=tc.getContext('2d');
+    tx.drawImage(_cropImg,_cropFrameX,_cropFrameY,_cropFrameW,_cropFrameH,0,0,_cropFrameW,_cropFrameH);
+    const ci=new Image();
+    ci.onload=()=>{
+        currentImage=ci;
+        document.getElementById('cropModal').style.display='none';
+        const uploadZone = document.getElementById('uploadZone');
+        const canvasEditor = document.getElementById('canvasEditor') || document.querySelector('.editor-main');
+        if(uploadZone) uploadZone.style.display='none';
+        if(canvasEditor) canvasEditor.style.display='flex';
+        document.getElementById('statusBar').style.display='flex';
+        document.getElementById('paramPanel').style.display='block';
+        showToast('已裁剪，正在生成...'); setTimeout(()=>generatePerlerBeads(),200);
+    };
+    ci.src=tc.toDataURL();
+});
+const frameEl=document.getElementById('cropFrame');
+if(frameEl){
+    frameEl.addEventListener('mousedown',_cmDown);
+    frameEl.addEventListener('touchstart',_cmDown,{passive:false});
+    frameEl.querySelectorAll('.crop-handle').forEach(h=>{
+        h.addEventListener('mousedown',e=>{e.stopPropagation();_cmDown(e);});
+        h.addEventListener('touchstart',e=>{e.stopPropagation();_cmDown(e);},{passive:false});
+    });
+}
+
+// 键盘快捷键
+document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+    const k=e.key.toLowerCase();
+    if(k==='b')selectTool('brush');
+    else if(k==='e')selectTool('eraser');
+    else if(k==='i')selectTool('picker');
+    else if(k==='r')selectTool('rect');
+    else if(k==='g')selectTool('fill');
+    else if(k===' '){e.preventDefault();selectTool('drag');}
+    else if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();undo();}
+    else if((e.ctrlKey||e.metaKey)&&k==='y'){e.preventDefault();redo();}
+    else if((e.ctrlKey||e.metaKey)&&k==='o'){e.preventDefault();document.getElementById('fileInput')?.click();}
+});
+
+</script>
+
 </body>
 </html>
