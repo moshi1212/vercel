@@ -953,3 +953,194 @@ body.pro-mode .canvas-wrapper {
     color: white;
     border-color: #2b78f0;
 }
+
+
+/* ========== 裁剪弹窗 v2（DOM 模板：8 手柄 + 三按钮） ========== */
+.crop-modal-content {
+    max-width: 760px;
+    width: 92vw;
+}
+.crop-modal-content .modal-header {
+    align-items: flex-start;
+    padding: 20px 24px 12px;
+}
+.crop-title {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+.crop-subtitle {
+    margin: 0;
+    font-size: 12px;
+    color: #888;
+}
+.crop-body {
+    display: flex;
+    gap: 24px;
+    padding: 16px 24px 20px;
+}
+.crop-preview-area {
+    position: relative;
+    width: 400px;
+    height: 400px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #f0f0f0;
+    background-image:
+      linear-gradient(45deg, #e8e8e8 25%, transparent 25%),
+      linear-gradient(-45deg, #e8e8e8 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e8e8e8 75%),
+      linear-gradient(-45deg, transparent 75%, #e8e8e8 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+.crop-preview-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+.crop-img {
+    position: absolute;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+}
+.crop-mask {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+.crop-frame {
+    position: absolute;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 1px rgba(43, 120, 240, 0.4);
+    cursor: move;
+    box-sizing: border-box;
+}
+.crop-handle {
+    position: absolute;
+    background: #ffffff;
+    border: 1px solid #2b78f0;
+    box-sizing: border-box;
+}
+.crop-handle.crop-h-nw,
+.crop-handle.crop-h-ne,
+.crop-handle.crop-h-sw,
+.crop-handle.crop-h-se {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+}
+.crop-handle.crop-h-n,
+.crop-handle.crop-h-s {
+    width: 26px; height: 8px; left: 50%; transform: translateX(-50%);
+    border-radius: 2px;
+}
+.crop-handle.crop-h-e,
+.crop-handle.crop-h-w {
+    width: 8px; height: 26px; top: 50%; transform: translateY(-50%);
+    border-radius: 2px;
+}
+.crop-h-nw { left: -7px; top: -7px; cursor: nwse-resize; }
+.crop-h-ne { right: -7px; top: -7px; cursor: nesw-resize; }
+.crop-h-sw { left: -7px; bottom: -7px; cursor: nesw-resize; }
+.crop-h-se { right: -7px; bottom: -7px; cursor: nwse-resize; }
+.crop-h-n  { top: -4px; cursor: ns-resize; }
+.crop-h-s  { bottom: -4px; cursor: ns-resize; }
+.crop-h-e  { right: -4px; cursor: ew-resize; }
+.crop-h-w  { left: -4px; cursor: ew-resize; }
+
+.crop-controls {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 200px;
+}
+.crop-control-group label {
+    display: block;
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+.crop-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.crop-slider-row input[type="range"] {
+    flex: 1;
+    accent-color: #2b78f0;
+}
+.crop-slider-row span {
+    font-size: 12px;
+    color: #2b78f0;
+    min-width: 48px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.crop-row-btns {
+    display: flex;
+    gap: 10px;
+}
+.crop-row-btns .btn-secondary {
+    flex: 1;
+    padding: 8px 0;
+    border: 1px solid #d0d0d0;
+    background: #fff;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.crop-row-btns .btn-secondary:hover {
+    border-color: #2b78f0;
+    color: #2b78f0;
+}
+.crop-tip {
+    margin: 0;
+    font-size: 12px;
+    color: #888;
+    line-height: 1.6;
+    background: #f7f9fc;
+    padding: 10px 12px;
+    border-radius: 6px;
+}
+.crop-footer {
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 24px 20px;
+}
+.crop-footer .btn-secondary,
+.crop-footer .btn-primary {
+    min-width: 96px;
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+.crop-footer .btn-secondary {
+    background: #fff;
+    border: 1px solid #d0d0d0;
+    color: #555;
+}
+.crop-footer .btn-secondary:hover {
+    border-color: #2b78f0;
+    color: #2b78f0;
+}
+.crop-footer .btn-primary {
+    background: #2b78f0;
+    border: 1px solid #2b78f0;
+    color: #fff;
+}
+.crop-footer .btn-primary:hover {
+    background: #1f5fc7;
+    border-color: #1f5fc7;
+}
+@media (max-width: 720px) {
+    .crop-body { flex-direction: column; }
+    .crop-preview-area { width: 100%; height: 320px; }
+}
